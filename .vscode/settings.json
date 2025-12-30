@@ -1,0 +1,21 @@
+{
+  "java.project.sourcePaths": ["src"],
+  "java.project.outputPath": "bin",
+
+  "java.project.referencedLibraries": {
+    "include": [
+      "lib/**/*.jar",
+      "E:/mysql-connector-j-9.3.0.jar",
+      "C:/Program Files/Java/javafx-sdk-25.0.1/lib/*.jar"
+    ],
+    "exclude": [
+      "c:\\Program Files\\Java\\javafx-sdk-25.0.1\\lib\\javafx.base.jar",
+      "lib/javafx-swt.jar"
+    ]
+  },
+
+  "java.home": "C:/Program Files/Java/jdk-25",
+
+  "java.debug.settings.onBuildFailureProceed": true,
+  "javaAutoConfig.enabled": false
+}
