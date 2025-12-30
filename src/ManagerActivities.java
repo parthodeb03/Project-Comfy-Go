@@ -1,24 +1,42 @@
+import java.sql.Connection;
+
 public class ManagerActivities {
 
-    private Booking booking;
-    private Payment payment;
-    private Hotel hotel;
+    private final Connection conn;
 
-    public ManagerActivities(Booking booking, Payment payment, Hotel hotel) {
-        this.booking = booking;
-        this.payment = payment;
-        this.hotel = hotel;
+    public ManagerActivities(Connection conn) {
+        this.conn = conn;
     }
 
-    public void approvingUserBookings() {
-        booking.approveBooking();
+    public boolean confirmBooking(Booking booking) {
+        if (booking == null) return false;
+        return booking.updateBookingStatus(conn, Booking.STATUSCONFIRMED);
     }
 
-    public int getHotelAvailability(int hotelId) {
-        return hotel.hotel_availability;
+    public boolean cancelBooking(Booking booking) {
+        if (booking == null) return false;
+        return booking.updateBookingStatus(conn, Booking.STATUSCANCELLED);
     }
 
-    public void updatingHotelAvailability(int newAvailability) {
-        hotel.hotel_availability = newAvailability;
+    public boolean updatePaymentStatus(Payment payment, String newStatus) {
+        if (payment == null) return false;
+        return payment.updatePaymentStatus(conn, newStatus);
+    }
+
+    public boolean refundPayment(Payment payment) {
+        if (payment == null) return false;
+        return payment.updatePaymentStatus(conn, Payment.STATUSREFUNDED);
+    }
+
+    public boolean updateHotelAvailability(Hotel hotel, int newAvailability) {
+        if (hotel == null) return false;
+        hotel.setRoomAvailability(newAvailability);
+        return hotel.updateRoomAvailability(conn, newAvailability);
+    }
+
+    public boolean updateHotelPrice(Hotel hotel, double newPrice) {
+        if (hotel == null) return false;
+        hotel.setPricePerNight(newPrice);
+        return hotel.updatePrice(conn, newPrice);
     }
 }

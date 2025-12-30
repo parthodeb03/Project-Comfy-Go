@@ -1,11 +1,17 @@
-import java.sql.*;
-import java.util.UUID;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
- * Manager Entity - Represents a Hotel Manager
- * Handles manager registration, authentication, and profile management
+ * Manager Entity - Represents a Hotel Manager.
+ *
+ * Expected table columns (used by AuthService):
+ * managers(managerid, managername, manageremail, managerphone, managerpassword,
+ *          hotelname, hotelnid, registrationnumber, status, ...)
  */
 public class Manager {
+
     private String managerId;
     private String managerName;
     private String managerEmail;
@@ -15,146 +21,116 @@ public class Manager {
     private String hotelNID;
     private String registrationNumber;
     private String registrationDate;
-    private String status;
-    
-    // Constructor
-    public Manager() {
-        this.managerId = UUID.randomUUID().toString().substring(0, 12);
-        this.status = "ACTIVE";
+    private String status = "ACTIVE";
+
+    public Manager() {}
+
+    public Manager(String managerId, String managerName, String managerEmail) {
+        this.managerId = managerId;
+        this.managerName = managerName;
+        this.managerEmail = managerEmail;
     }
-    
-    // Getters and Setters
+
     public String getManagerId() { return managerId; }
     public void setManagerId(String managerId) { this.managerId = managerId; }
-    
+
     public String getManagerName() { return managerName; }
     public void setManagerName(String managerName) { this.managerName = managerName; }
-    
+
     public String getManagerEmail() { return managerEmail; }
     public void setManagerEmail(String managerEmail) { this.managerEmail = managerEmail; }
-    
+
     public String getManagerPhone() { return managerPhone; }
     public void setManagerPhone(String managerPhone) { this.managerPhone = managerPhone; }
-    
+
     public String getManagerPassword() { return managerPassword; }
     public void setManagerPassword(String managerPassword) { this.managerPassword = managerPassword; }
-    
+
     public String getHotelName() { return hotelName; }
     public void setHotelName(String hotelName) { this.hotelName = hotelName; }
-    
+
     public String getHotelNID() { return hotelNID; }
     public void setHotelNID(String hotelNID) { this.hotelNID = hotelNID; }
-    
+
     public String getRegistrationNumber() { return registrationNumber; }
     public void setRegistrationNumber(String registrationNumber) { this.registrationNumber = registrationNumber; }
-    
+
     public String getRegistrationDate() { return registrationDate; }
     public void setRegistrationDate(String registrationDate) { this.registrationDate = registrationDate; }
-    
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    
-    // Manager CRUD Operations
+
+    // -------------------- Optional DB helpers --------------------
+
     public boolean registerManager(Connection conn) {
-        String sql = "INSERT INTO managers (managerId, managerName, managerEmail, managerPhone, managerPassword, hotelName, hotelNID, registrationNumber, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, this.managerId);
-            pstmt.setString(2, this.managerName);
-            pstmt.setString(3, this.managerEmail);
-            pstmt.setString(4, this.managerPhone);
-            pstmt.setString(5, this.managerPassword);
-            pstmt.setString(6, this.hotelName);
-            pstmt.setString(7, this.hotelNID);
-            pstmt.setString(8, this.registrationNumber);
-            pstmt.setString(9, this.status);
-            
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
+        if (conn == null) return false;
+
+        try {
+            if (managerId == null || managerId.trim().isEmpty()) {
+                managerId = IdGenerator.uniqueNumericId(conn, "managers", "managerid", 12, 60);
+            }
+
+            String sql =
+                    "INSERT INTO managers " +
+                    "(managerid, managername, manageremail, managerphone, managerpassword, hotelname, hotelnid, registrationnumber, status) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, managerId);
+                ps.setString(2, managerName);
+                ps.setString(3, managerEmail);
+                ps.setString(4, managerPhone);
+                ps.setString(5, managerPassword);
+                ps.setString(6, hotelName);
+                ps.setString(7, hotelNID);
+                ps.setString(8, registrationNumber);
+                ps.setString(9, status);
+                return ps.executeUpdate() > 0;
+            }
+
+        } catch (Exception e) {
             System.out.println("Error registering manager: " + e.getMessage());
             return false;
         }
     }
-    
+
     public static Manager getManagerByEmail(String email, Connection conn) {
-        String sql = "SELECT * FROM managers WHERE managerEmail = ?";
-        Manager manager = null;
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, email);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    manager = new Manager();
-                    manager.setManagerId(rs.getString("managerId"));
-                    manager.setManagerName(rs.getString("managerName"));
-                    manager.setManagerEmail(rs.getString("managerEmail"));
-                    manager.setManagerPhone(rs.getString("managerPhone"));
-                    manager.setHotelName(rs.getString("hotelName"));
-                    manager.setRegistrationDate(rs.getString("registrationDate"));
-                    manager.setStatus(rs.getString("status"));
-                }
+        if (conn == null) return null;
+        if (email == null || email.trim().isEmpty()) return null;
+
+        String sql =
+                "SELECT managerid, managername, manageremail, managerphone, hotelname, status " +
+                "FROM managers WHERE manageremail = ? LIMIT 1";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email.trim());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+
+                Manager m = new Manager();
+                m.setManagerId(rs.getString("managerid"));
+                m.setManagerName(rs.getString("managername"));
+                m.setManagerEmail(rs.getString("manageremail"));
+                m.setManagerPhone(rs.getString("managerphone"));
+                m.setHotelName(rs.getString("hotelname"));
+                m.setStatus(rs.getString("status"));
+                return m;
             }
+
         } catch (SQLException e) {
             System.out.println("Error fetching manager: " + e.getMessage());
-        }
-        
-        return manager;
-    }
-    
-    public boolean updateManager(Connection conn) {
-        String sql = "UPDATE managers SET managerName = ?, managerPhone = ?, hotelName = ? WHERE managerId = ?";
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, this.managerName);
-            pstmt.setString(2, this.managerPhone);
-            pstmt.setString(3, this.hotelName);
-            pstmt.setString(4, this.managerId);
-            
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.out.println("Error updating manager: " + e.getMessage());
-            return false;
+            return null;
         }
     }
-    
-    public boolean deleteManager(Connection conn) {
-        String sql = "DELETE FROM managers WHERE managerId = ?";
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, this.managerId);
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.out.println("Error deleting manager: " + e.getMessage());
-            return false;
-        }
-    }
-    
-    public boolean changeStatus(Connection conn, String newStatus) {
-        String sql = "UPDATE managers SET status = ? WHERE managerId = ?";
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, newStatus);
-            pstmt.setString(2, this.managerId);
-            
-            boolean result = pstmt.executeUpdate() > 0;
-            if (result) {
-                this.status = newStatus;
-            }
-            return result;
-        } catch (SQLException e) {
-            System.out.println("Error changing status: " + e.getMessage());
-            return false;
-        }
-    }
-    
+
     @Override
     public String toString() {
         return "Manager{" +
                 "managerId='" + managerId + '\'' +
                 ", managerName='" + managerName + '\'' +
                 ", managerEmail='" + managerEmail + '\'' +
-                ", managerPhone='" + managerPhone + '\'' +
                 ", hotelName='" + hotelName + '\'' +
                 ", status='" + status + '\'' +
                 '}';

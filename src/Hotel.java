@@ -1,11 +1,17 @@
-import java.sql.*;
-import java.util.UUID;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
- * Hotel Entity - Represents a Hotel
- * Handles hotel management, room availability, pricing, and amenities
+ * Hotel Entity - matches `hotels` table columns used by HotelService.
+ *
+ * Expected columns:
+ * hotels(hotelid, hotelname, hotellocation, hotelpricepernight, hotelrating,
+ *       roomavailability, roomcategory, totalrooms, hotelfeatures, managerid, ...)
  */
 public class Hotel {
+
     private String hotelId;
     private String hotelName;
     private String hotelLocation;
@@ -16,150 +22,110 @@ public class Hotel {
     private int totalRooms;
     private String features;
     private String managerId;
-    
-    // Constructor
-    public Hotel() {
-        this.hotelId = UUID.randomUUID().toString().substring(0, 12);
-    }
-    
-    // Getters and Setters
+
+    public Hotel() {}
+
     public String getHotelId() { return hotelId; }
     public void setHotelId(String hotelId) { this.hotelId = hotelId; }
-    
+
     public String getHotelName() { return hotelName; }
     public void setHotelName(String hotelName) { this.hotelName = hotelName; }
-    
+
     public String getHotelLocation() { return hotelLocation; }
     public void setHotelLocation(String hotelLocation) { this.hotelLocation = hotelLocation; }
-    
+
     public double getPricePerNight() { return pricePerNight; }
     public void setPricePerNight(double pricePerNight) { this.pricePerNight = pricePerNight; }
-    
+
     public double getRating() { return rating; }
     public void setRating(double rating) { this.rating = rating; }
-    
+
     public int getRoomAvailability() { return roomAvailability; }
     public void setRoomAvailability(int roomAvailability) { this.roomAvailability = roomAvailability; }
-    
+
     public String getRoomCategory() { return roomCategory; }
     public void setRoomCategory(String roomCategory) { this.roomCategory = roomCategory; }
-    
+
     public int getTotalRooms() { return totalRooms; }
     public void setTotalRooms(int totalRooms) { this.totalRooms = totalRooms; }
-    
+
     public String getFeatures() { return features; }
     public void setFeatures(String features) { this.features = features; }
-    
+
     public String getManagerId() { return managerId; }
     public void setManagerId(String managerId) { this.managerId = managerId; }
-    
-    // Hotel CRUD Operations
-    public boolean createHotel(Connection conn) {
-        String sql = "INSERT INTO hotels (hotel_Id, hotel_Name, hotel_Location, hotel_Price_per_Night, hotel_rating, room_availability, room_category, totalRooms, hotelFeatures, managerId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, this.hotelId);
-            pstmt.setString(2, this.hotelName);
-            pstmt.setString(3, this.hotelLocation);
-            pstmt.setDouble(4, this.pricePerNight);
-            pstmt.setDouble(5, this.rating);
-            pstmt.setInt(6, this.roomAvailability);
-            pstmt.setString(7, this.roomCategory);
-            pstmt.setInt(8, this.totalRooms);
-            pstmt.setString(9, this.features);
-            pstmt.setString(10, this.managerId);
-            
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.out.println("Error creating hotel: " + e.getMessage());
-            return false;
-        }
-    }
-    
-    public boolean updateHotel(Connection conn) {
-        String sql = "UPDATE hotels SET hotel_Price_per_Night = ?, hotel_rating = ?, room_availability = ?, hotelFeatures = ? WHERE hotel_Id = ?";
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setDouble(1, this.pricePerNight);
-            pstmt.setDouble(2, this.rating);
-            pstmt.setInt(3, this.roomAvailability);
-            pstmt.setString(4, this.features);
-            pstmt.setString(5, this.hotelId);
-            
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.out.println("Error updating hotel: " + e.getMessage());
-            return false;
-        }
-    }
-    
-    public boolean deleteHotel(Connection conn) {
-        String sql = "DELETE FROM hotels WHERE hotel_Id = ?";
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, this.hotelId);
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.out.println("Error deleting hotel: " + e.getMessage());
-            return false;
-        }
-    }
-    
+
+    // -------------------- Optional DB helpers --------------------
+
     public static Hotel getHotelById(String hotelId, Connection conn) {
-        String sql = "SELECT * FROM hotels WHERE hotel_Id = ?";
-        Hotel hotel = null;
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, hotelId);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    hotel = new Hotel();
-                    hotel.setHotelId(rs.getString("hotel_Id"));
-                    hotel.setHotelName(rs.getString("hotel_Name"));
-                    hotel.setHotelLocation(rs.getString("hotel_Location"));
-                    hotel.setPricePerNight(rs.getDouble("hotel_Price_per_Night"));
-                    hotel.setRating(rs.getDouble("hotel_rating"));
-                    hotel.setRoomAvailability(rs.getInt("room_availability"));
-                    hotel.setRoomCategory(rs.getString("room_category"));
-                    hotel.setTotalRooms(rs.getInt("totalRooms"));
-                    hotel.setFeatures(rs.getString("hotelFeatures"));
-                    hotel.setManagerId(rs.getString("managerId"));
-                }
+        if (conn == null) return null;
+        if (hotelId == null || hotelId.trim().isEmpty()) return null;
+
+        String sql = "SELECT * FROM hotels WHERE hotelid = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, hotelId.trim());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+
+                Hotel h = new Hotel();
+                h.hotelId = rs.getString("hotelid");
+                h.hotelName = rs.getString("hotelname");
+                h.hotelLocation = rs.getString("hotellocation");
+                h.pricePerNight = rs.getDouble("hotelpricepernight");
+                h.rating = rs.getDouble("hotelrating");
+                h.roomAvailability = rs.getInt("roomavailability");
+                h.roomCategory = rs.getString("roomcategory");
+                h.totalRooms = rs.getInt("totalrooms");
+                h.features = rs.getString("hotelfeatures");
+                h.managerId = rs.getString("managerid");
+                return h;
             }
+
         } catch (SQLException e) {
             System.out.println("Error fetching hotel: " + e.getMessage());
+            return null;
         }
-        
-        return hotel;
     }
-    
+
     public boolean updateRoomAvailability(Connection conn, int newAvailability) {
-        String sql = "UPDATE hotels SET room_availability = ? WHERE hotel_Id = ?";
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, newAvailability);
-            pstmt.setString(2, this.hotelId);
-            return pstmt.executeUpdate() > 0;
+        if (conn == null) return false;
+        if (hotelId == null || hotelId.trim().isEmpty()) return false;
+
+        String sql = "UPDATE hotels SET roomavailability = ? WHERE hotelid = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, newAvailability);
+            ps.setString(2, hotelId);
+
+            boolean ok = ps.executeUpdate() > 0;
+            if (ok) this.roomAvailability = newAvailability;
+            return ok;
+
         } catch (SQLException e) {
             System.out.println("Error updating room availability: " + e.getMessage());
             return false;
         }
     }
-    
+
     public boolean updatePrice(Connection conn, double newPrice) {
-        String sql = "UPDATE hotels SET hotel_Price_per_Night = ? WHERE hotel_Id = ?";
-        
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setDouble(1, newPrice);
-            pstmt.setString(2, this.hotelId);
-            return pstmt.executeUpdate() > 0;
+        if (conn == null) return false;
+        if (hotelId == null || hotelId.trim().isEmpty()) return false;
+
+        String sql = "UPDATE hotels SET hotelpricepernight = ? WHERE hotelid = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, newPrice);
+            ps.setString(2, hotelId);
+
+            boolean ok = ps.executeUpdate() > 0;
+            if (ok) this.pricePerNight = newPrice;
+            return ok;
+
         } catch (SQLException e) {
             System.out.println("Error updating price: " + e.getMessage());
             return false;
         }
     }
-    
+
     @Override
     public String toString() {
         return "Hotel{" +
@@ -169,7 +135,6 @@ public class Hotel {
                 ", pricePerNight=" + pricePerNight +
                 ", rating=" + rating +
                 ", roomAvailability=" + roomAvailability +
-                ", totalRooms=" + totalRooms +
                 '}';
     }
 }

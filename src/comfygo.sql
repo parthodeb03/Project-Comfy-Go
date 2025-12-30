@@ -1,517 +1,427 @@
-CREATE TABLE users (
-    user_Id INT PRIMARY KEY AUTO_INCREMENT,
-    user_Name VARCHAR(100) NOT NULL,
-    user_Email VARCHAR(100) UNIQUE NOT NULL,
-    user_Password VARCHAR(255) NOT NULL,
-    user_PhoneNumber VARCHAR(20),
-    user_Address VARCHAR(200),
-    user_NationalId VARCHAR(20),
-    user_ProfilePicture VARCHAR(255),
-    registration_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_email (user_Email),
-    INDEX idx_phone (user_PhoneNumber)
-);
+DROP DATABASE IF EXISTS comfygo;
+CREATE DATABASE IF NOT EXISTS comfygo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE comfygo;
 
--- ============================================
--- 2. GUIDES TABLE (Empty - No Data)
--- ============================================
-CREATE TABLE guides (
-    guide_Id INT PRIMARY KEY AUTO_INCREMENT,
-    guide_Name VARCHAR(100) NOT NULL,
-    guideEmail VARCHAR(100) UNIQUE NOT NULL,
-    guide_Password VARCHAR(255) NOT NULL,
-    guide_PhoneNumber VARCHAR(20),
-    guide_Language VARCHAR(100),
-    guide_ExperienceYears INT,
-    guide_SpecializationArea VARCHAR(100),
-    guide_Rating DECIMAL(3,2) DEFAULT 0,
-    guide_ProfilePicture VARCHAR(255),
-    registration_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_email (guideEmail),
-    INDEX idx_specialization (guide_SpecializationArea)
-);
+-- ===================== USERS =====================
+CREATE TABLE IF NOT EXISTS users (
+  userid VARCHAR(12) PRIMARY KEY,
+  username VARCHAR(100) NOT NULL,
+  useremail VARCHAR(100) NOT NULL,
+  userpassword VARCHAR(255) NOT NULL,
+  userphone VARCHAR(20) UNIQUE,
+  usernid VARCHAR(20) UNIQUE,
+  passportno VARCHAR(20),
+  dateofbirth DATE,
+  country VARCHAR(80),
+  address VARCHAR(255),
+  registrationdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_users_email (useremail),
+  INDEX idx_users_email (useremail),
+  INDEX idx_users_phone (userphone),
+  INDEX idx_users_nid (usernid),
+  INDEX idx_users_passport (passportno)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 3. MANAGERS TABLE (Empty - No Data)
--- ============================================
-CREATE TABLE managers (
-    manager_Id INT PRIMARY KEY AUTO_INCREMENT,
-    manager_Name VARCHAR(100) NOT NULL,
-    managerEmail VARCHAR(100) UNIQUE NOT NULL,
-    manager_Password VARCHAR(255) NOT NULL,
-    manager_PhoneNumber VARCHAR(20),
-    manager_CompanyName VARCHAR(100),
-    manager_Location VARCHAR(100),
-    manager_JoiningDate DATE,
-    manager_ProfilePicture VARCHAR(255),
-    registration_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_email (managerEmail),
-    INDEX idx_company (manager_CompanyName)
-);
+-- ===================== MANAGERS =====================
+CREATE TABLE IF NOT EXISTS managers (
+  managerid VARCHAR(12) PRIMARY KEY,
+  managername VARCHAR(100) NOT NULL,
+  manageremail VARCHAR(100) NOT NULL,
+  managerphone VARCHAR(20) NOT NULL,
+  managerpassword VARCHAR(255) NOT NULL,
+  hotelname VARCHAR(150),
+  hotelnid VARCHAR(60) UNIQUE,
+  registrationnumber VARCHAR(60) UNIQUE,
+  status VARCHAR(20) DEFAULT 'ACTIVE',
+  registrationdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_managers_email (manageremail),
+  INDEX idx_managers_email (manageremail),
+  INDEX idx_managers_phone (managerphone),
+  INDEX idx_managers_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 4. TOURIST_ATTRACTIONS TABLE (40 records)
--- ============================================
-CREATE TABLE tourist_attractions (
-    attraction_Id INT PRIMARY KEY AUTO_INCREMENT,
-    attraction_Name VARCHAR(150) NOT NULL,
-    attraction_Location VARCHAR(100),
-    attraction_Description VARCHAR(500),
-    attraction_Category VARCHAR(50),
-    estimated_VisitingTime VARCHAR(50),
-    entry_Fee VARCHAR(50),
-    best_Time_To_Visit VARCHAR(100),
-    rating DECIMAL(3,2),
-    INDEX idx_location (attraction_Location),
-    INDEX idx_category (attraction_Category)
-);
+-- ===================== GUIDES =====================
+CREATE TABLE IF NOT EXISTS guides (
+  guideid VARCHAR(12) PRIMARY KEY,
+  guidename VARCHAR(100) NOT NULL,
+  guideemail VARCHAR(100) UNIQUE NOT NULL,
+  guidephone VARCHAR(20) UNIQUE NOT NULL,
+  guidepassword VARCHAR(255) NOT NULL,
+  guidedivision VARCHAR(60),
+  guidedistrict VARCHAR(60),
+  guidelanguage VARCHAR(200),
+  specialization VARCHAR(120),
+  rating DOUBLE DEFAULT 5.0,
+  totalratings INT DEFAULT 0,
+  isavailable BOOLEAN DEFAULT TRUE,
+  yearexperience INT DEFAULT 0,
+  status VARCHAR(20) DEFAULT 'ACTIVE',
+  registrationdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_guides_email (guideemail),
+  INDEX idx_guides_phone (guidephone),
+  INDEX idx_guides_available (isavailable),
+  INDEX idx_guides_division (guidedivision),
+  INDEX idx_guides_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO touristSpot (attraction_Name, attraction_Location, attraction_Description, attraction_Category, estimated_VisitingTime, entry_Fee, best_Time_To_Visit, rating) VALUES
-('Cox\'s Bazar Beach', 'Cox\'s Bazar', 'World\'s longest unbroken sandy beach stretching 120 km', 'Beach', '4-6 hours', 'Free', 'October to March', 4.9),
-('Lalbagh Fort', 'Dhaka', 'Historic 17th century Mughal fort with beautiful architecture', 'Historical', '2-3 hours', '100 BDT', 'Year-round', 4.7),
-('Ahsan Manzil', 'Dhaka', 'Pink Palace - former residence of Dhaka Nawabs', 'Historical', '2 hours', '100 BDT', 'Year-round', 4.8),
-('Sundarbans National Park', 'Khulna', 'World\'s largest mangrove forest, home to Bengal Tiger', 'Nature', '2-3 days', '5000 BDT', 'November to February', 4.9),
-('Sylhet Tea Gardens', 'Sylhet', 'Beautiful tea gardens with rolling hills and greenery', 'Nature', '4-5 hours', 'Free', 'January to April', 4.8),
-('Saint Martin\'s Island', 'Cox\'s Bazar', 'Scenic island with coral reefs and beautiful beaches', 'Beach', '6-8 hours', 'Free', 'October to March', 4.7),
-('Bandarban Hill Tracts', 'Bandarban', 'Beautiful hill stations with tribal culture and crafts', 'Mountain', '3-4 days', 'Free', 'November to February', 4.8),
-('Rangamati Lake', 'Rangamati', 'Scenic artificial lake surrounded by hills and forests', 'Lake', '3-4 hours', 'Free', 'October to March', 4.6),
-('Srimangal', 'Moulvibazar', 'Tea gardens and Lawachara National Park with wildlife', 'Nature', '2-3 days', 'Free/Varies', 'January to April', 4.7),
-('Bagerhat Mosque City', 'Bagerhat', 'UNESCO World Heritage Site with 60 Dome Mosque', 'Historical', '3-4 hours', '100 BDT', 'October to March', 4.8),
-('Kuakata Sea Beach', 'Patuakhali', 'Beach where you can see both sunrise and sunset', 'Beach', '4-5 hours', 'Free', 'September to April', 4.6),
-('Paharpur Buddhist Monastery', 'Paharpur', 'Ancient Buddhist temple complex, UNESCO site', 'Religious', '2-3 hours', '100 BDT', 'Year-round', 4.7),
-('Jaflong Stone Area', 'Sylhet', 'Scenic area with stone collection and river views', 'Nature', '3 hours', 'Free', 'January to April', 4.5),
-('Kaptai Lake', 'Rangamati', 'Largest artificial lake in Bangladesh for boat tours', 'Lake', '2-3 hours', 'Free', 'October to March', 4.6),
-('Bangladesh National Museum', 'Dhaka', 'Museum with artifacts from prehistoric to modern times', 'Museum', '2-3 hours', '100 BDT', 'Year-round', 4.5),
-('Star Mosque', 'Dhaka', 'Beautiful mosque with intricate star-patterned interior', 'Religious', '1 hour', 'Free', 'Year-round', 4.4),
-('National Parliament Building', 'Dhaka', 'Architectural marvel designed by Louis Kahn', 'Architectural', '1.5 hours', '50 BDT', 'Year-round (with permit)', 4.6),
-('Buriganga River', 'Dhaka', 'Historical river for boat tours and sunset views', 'Water', '1-2 hours', 'Free', 'Year-round', 4.3),
-('Sonargaon', 'Sonargaon', 'Old capital with folk museum and historic sites', 'Historical', '3-4 hours', 'Free/100 BDT', 'October to March', 4.5),
-('Puthia Temple Complex', 'Puthia', 'Ancient Hindu temples with archaeological significance', 'Religious', '2-3 hours', 'Free', 'October to March', 4.6),
-('Gaur (Gour)', 'Chapainawabganj', 'Ancient medieval capital with historic ruins', 'Historical', '3 hours', 'Free', 'October to March', 4.4),
-('Dinajpur Silk Region', 'Dinajpur', 'Famous for silk production and traditional weaving', 'Cultural', '4 hours', 'Free', 'Year-round', 4.5),
-('Bogra Archaeological Museum', 'Bogra', 'Museum with ancient artifacts and pottery', 'Museum', '2 hours', '100 BDT', 'Year-round', 4.3),
-('Mymensingh Agricultural University', 'Mymensingh', 'Beautiful campus with gardens and water features', 'Educational', '2 hours', 'Free', 'Year-round', 4.2),
-('Ratargul Swamp Forest', 'Sylhet', 'Unique freshwater swamp forest for boat tours', 'Nature', '3-4 hours', 'Free', 'August to December', 4.7),
-('Maheshkhali Island', 'Cox\'s Bazar', 'Island with temples, beaches and local community life', 'Island', '4-5 hours', 'Free', 'October to March', 4.5),
-('Foy\'s Lake', 'Chittagong', 'Scenic lake with recreation facilities and gardens', 'Lake', '2-3 hours', 'Free', 'October to March', 4.4),
-('Chittagong War Cemetery', 'Chittagong', 'WWII cemetery with historical significance', 'Historical', '1-2 hours', 'Free', 'Year-round', 4.3),
-('Bhola Island', 'Bhola', 'Largest island in Bangladesh with diverse ecosystems', 'Island', '2-3 days', 'Free', 'October to March', 4.6),
-('Pirojpur River District', 'Pirojpur', 'Scenic river district with boat tours and local culture', 'Water', '3-4 hours', 'Free', 'October to March', 4.4),
-('Lakshmipur Coastal Area', 'Lakshmipur', 'Beach area with fishing communities and seafood markets', 'Beach', '3-4 hours', 'Free', 'October to March', 4.3),
-('Noakhali Island', 'Noakhali', 'Island formed by river, unique ecological area', 'Island', '2-3 hours', 'Free', 'October to March', 4.2),
-('Shalban Vihara', 'Comilla', 'Ancient Buddhist monastery with historical importance', 'Religious', '1-2 hours', 'Free', 'Year-round', 4.5),
-('Laksham Upazila', 'Comilla', 'Historic upazila with temples and traditional culture', 'Cultural', '2-3 hours', 'Free', 'October to March', 4.3),
-('Sadarbari Palace', 'Chandpur', 'Historic palace with architectural significance', 'Historical', '1.5 hours', 'Free', 'Year-round', 4.2),
-('Jamalpur Textile Industry', 'Jamalpur', 'Industrial heritage and traditional textile manufacturing', 'Cultural', '2 hours', 'Free', 'Year-round', 4.1),
-('Netrokona Handloom', 'Netrokona', 'Traditional handloom weaving centers', 'Cultural', '2-3 hours', 'Free', 'Year-round', 4.4),
-('Sherpur Pottery Area', 'Sherpur', 'Traditional pottery making villages', 'Cultural', '2-3 hours', 'Free', 'Year-round', 4.2),
-('Tangail Textile', 'Tangail', 'Famous for traditional saris and handlooms', 'Cultural', '3-4 hours', 'Free', 'Year-round', 4.5),
-('Joydebpur Industrial Area', 'Gazipur', 'Industrial heritage and development area', 'Industrial', '2 hours', 'Free', 'Year-round', 3.8);
+-- ===================== HOTELS =====================
+CREATE TABLE IF NOT EXISTS hotels (
+  hotelid VARCHAR(12) PRIMARY KEY,
+  hotelname VARCHAR(150) NOT NULL,
+  hotellocation VARCHAR(150),
+  hotelpricepernight DOUBLE NOT NULL,
+  hotelrating DOUBLE DEFAULT 0,
+  roomavailability INT DEFAULT 0,
+  roomcategory VARCHAR(60),
+  totalrooms INT DEFAULT 0,
+  hotelfeatures VARCHAR(255),
+  managerid VARCHAR(12),
+  registrationdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_hotels_manager
+    FOREIGN KEY (managerid) REFERENCES managers(managerid)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  INDEX idx_hotels_location (hotellocation),
+  INDEX idx_hotels_rating (hotelrating),
+  INDEX idx_hotels_manager (managerid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 5. HOTELS TABLE (30 records)
--- ============================================
-CREATE TABLE hotels (
-    hotel_Id INT PRIMARY KEY AUTO_INCREMENT,
-    hotel_Name VARCHAR(100) NOT NULL,
-    hotel_Location VARCHAR(100),
-    hotel_Price_per_Night DECIMAL(10,2),
-    hotel_rating DECIMAL(3,2),
-    room_availability INT,
-    manager_Id INT,
-    hotel_PhoneNumber VARCHAR(20),
-    hotel_Email VARCHAR(100),
-    hotel_Description VARCHAR(300),
-    FOREIGN KEY (manager_Id) REFERENCES managers(manager_Id) ON DELETE CASCADE,
-    INDEX idx_location (hotel_Location),
-    INDEX idx_rating (hotel_rating),
-    INDEX idx_manager (manager_Id)
-);
+-- ===================== ROOMS =====================
+CREATE TABLE IF NOT EXISTS rooms (
+  roomid VARCHAR(12) PRIMARY KEY,
+  roomnumber VARCHAR(10) NOT NULL,
+  hotelid VARCHAR(12) NOT NULL,
+  roomtype VARCHAR(50),
+  roomprice DECIMAL(10,2),
+  roomcapacity INT,
+  isavailable BOOLEAN DEFAULT TRUE,
+  roomfeatures VARCHAR(200),
+  CONSTRAINT fk_rooms_hotel
+    FOREIGN KEY (hotelid) REFERENCES hotels(hotelid)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  INDEX idx_rooms_hotel (hotelid),
+  INDEX idx_rooms_available (isavailable)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO hotels (hotel_Name, hotel_Location, hotel_Price_per_Night, hotel_rating, room_availability, manager_Id, hotel_PhoneNumber, hotel_Email, hotel_Description) VALUES
-('Green Valley Resort', 'Cox\'s Bazar', 3500.00, 4.8, 25, NULL, '01711111111', 'greenvalley@hotel.com', 'Luxury beach resort with modern amenities and sea view'),
-('Beach Paradise Hotels', 'Cox\'s Bazar', 2800.00, 4.7, 18, NULL, '01711111112', 'beachparadise@hotel.com', 'Budget-friendly beach hotel with basic facilities'),
-('Sylhet Tea Estate Hotel', 'Sylhet', 2500.00, 4.6, 15, NULL, '01711111113', 'sylhetteahotel@hotel.com', 'Scenic hotel overlooking tea gardens'),
-('Mountain View Resort', 'Bandarban', 2200.00, 4.5, 12, NULL, '01711111114', 'mountainview@hotel.com', 'Hill station resort with trekking facilities'),
-('Dhaka Heritage Hotel', 'Dhaka', 4200.00, 4.9, 32, NULL, '01711111115', 'dhakaheritage@hotel.com', 'Premium hotel near historic landmarks'),
-('Sundarban Safari Lodge', 'Khulna', 3800.00, 4.8, 20, NULL, '01711111116', 'sundarban@hotel.com', 'Eco-friendly lodge for wildlife tours'),
-('Rangamati Hill Resort', 'Rangamati', 2100.00, 4.4, 14, NULL, '01711111117', 'rangamati@hotel.com', 'Hillside resort with lake views'),
-('Saint Martin Beach Resort', 'Saint Martin', 3100.00, 4.6, 16, NULL, '01711111118', 'saintmartin@hotel.com', 'Island resort with water sports'),
-('Chittagong Bay Hotel', 'Chittagong', 3600.00, 4.7, 22, NULL, '01711111119', 'chittagongbay@hotel.com', 'Seafront hotel with modern facilities'),
-('Kuakata Beach Resort', 'Kuakata', 2400.00, 4.5, 13, NULL, '01711111120', 'kuakata@hotel.com', 'Beach resort with sunset views'),
-('Historic Bagerhat Inn', 'Bagerhat', 1800.00, 4.3, 10, NULL, '01711111121', 'bagerhathinn@hotel.com', 'Heritage hotel near UNESCO sites'),
-('Barisal Rivers Hotel', 'Barisal', 2000.00, 4.2, 11, NULL, '01711111122', 'barisal@hotel.com', 'Riverside hotel with boat tours'),
-('Paharpur Buddhist Lodge', 'Paharpur', 1600.00, 4.1, 8, NULL, '01711111123', 'paharpur@hotel.com', 'Budget lodge for pilgrims and tourists'),
-('Mymensingh Valley Hotel', 'Mymensingh', 2300.00, 4.4, 14, NULL, '01711111124', 'mymensingh@hotel.com', 'Mid-range hotel with good facilities'),
-('Comilla Heritage Resort', 'Comilla', 2100.00, 4.3, 12, NULL, '01711111125', 'comilla@hotel.com', 'Heritage resort near historic temples'),
-('Chandpur Riverside Hotel', 'Chandpur', 1900.00, 4.2, 10, NULL, '01711111126', 'chandpur@hotel.com', 'Riverside hotel with fishing access'),
-('Lakshmipur Beach Inn', 'Lakshmipur', 1700.00, 4.0, 9, NULL, '01711111127', 'lakshmipur@hotel.com', 'Coastal inn with seafood restaurant'),
-('Noakhali Coastal Hotel', 'Noakhali', 1800.00, 4.1, 10, NULL, '01711111128', 'noakhali@hotel.com', 'Coastal hotel with local amenities'),
-('Rajshahi Silk Hotel', 'Rajshahi', 2600.00, 4.5, 16, NULL, '01711111129', 'rajshahi@hotel.com', 'Hotel near silk market and historical sites'),
-('Bogra Heritage Inn', 'Bogra', 2000.00, 4.2, 11, NULL, '01711111130', 'bogra@hotel.com', 'Heritage inn with local cuisine'),
-('Dinajpur Hill Resort', 'Dinajpur', 1900.00, 4.1, 10, NULL, '01711111131', 'dinajpur@hotel.com', 'Hill resort with silk industry tours'),
-('Jessore Gateway Hotel', 'Jessore', 1700.00, 4.0, 9, NULL, '01711111132', 'jessore@hotel.com', 'Gateway hotel for West Bengal visitors'),
-('Srimangal Green Lodge', 'Srimangal', 2200.00, 4.4, 13, NULL, '01711111133', 'srimangal@hotel.com', 'Eco-lodge in tea gardens area'),
-('Teknaf Island Resort', 'Teknaf', 2500.00, 4.5, 14, NULL, '01711111134', 'teknaf@hotel.com', 'Island resort with pristine beaches'),
-('Sonargaon Historic Inn', 'Sonargaon', 1900.00, 4.2, 10, NULL, '01711111135', 'sonargaon@hotel.com', 'Historic inn near museum and monuments'),
-('Tangail Resort', 'Tangail', 2100.00, 4.3, 12, NULL, '01711111136', 'tangail@hotel.com', 'Resort with sari workshop tours'),
-('Gazipur Business Hotel', 'Gazipur', 2400.00, 4.4, 15, NULL, '01711111137', 'gazipur@hotel.com', 'Business hotel with conference facilities'),
-('Narayanganj Riverside Inn', 'Narayanganj', 2000.00, 4.2, 11, NULL, '01711111138', 'narayanganj@hotel.com', 'Riverside inn with cargo port views'),
-('Manikganj Heritage Hotel', 'Manikganj', 1800.00, 4.1, 10, NULL, '01711111139', 'manikganj@hotel.com', 'Heritage hotel with pottery tours'),
-('Shariatpur Fishing Lodge', 'Shariatpur', 1600.00, 4.0, 8, NULL, '01711111140', 'shariatpur@hotel.com', 'Fishing lodge for adventure seekers');
+-- ===================== TOURIST SPOTS =====================
+CREATE TABLE IF NOT EXISTS touristspots (
+  spotid VARCHAR(12) PRIMARY KEY,
+  spotname VARCHAR(150) NOT NULL,
+  division VARCHAR(60),
+  district VARCHAR(60),
+  spotaddress VARCHAR(200),
+  description TEXT,
+  entryfee DOUBLE DEFAULT 0,
+  rating DOUBLE DEFAULT 0,
+  totalvisitors INT DEFAULT 0,
+  bestseason VARCHAR(100),
+  visitinghours VARCHAR(100),
+  registrationdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_spots_division (division),
+  INDEX idx_spots_district (district),
+  INDEX idx_spots_rating (rating)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 6. ROOMS TABLE (80 records)
--- ============================================
-CREATE TABLE rooms (
-    room_Id INT PRIMARY KEY AUTO_INCREMENT,
-    room_Number VARCHAR(10),
-    hotel_Id INT,
-    room_Type VARCHAR(50),
-    room_Price DECIMAL(10,2),
-    room_Capacity INT,
-    is_Available BOOLEAN DEFAULT TRUE,
-    room_Features VARCHAR(200),
-    FOREIGN KEY (hotel_Id) REFERENCES hotels(hotel_Id) ON DELETE CASCADE,
-    INDEX idx_hotel (hotel_Id),
-    INDEX idx_available (is_Available)
-);
+-- ===================== PAYMENT =====================
+CREATE TABLE IF NOT EXISTS payment (
+  paymentid VARCHAR(12) PRIMARY KEY,
+  amount DOUBLE NOT NULL,
+  paymentmethod VARCHAR(40),
+  paymentstatus VARCHAR(30) DEFAULT 'PENDING',
+  transactionid VARCHAR(80) UNIQUE,
+  description VARCHAR(255),
+  paymentdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_payment_status (paymentstatus),
+  INDEX idx_payment_date (paymentdate),
+  INDEX idx_payment_transaction (transactionid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO rooms (room_Number, hotel_Id, room_Type, room_Price, room_Capacity, is_Available, room_Features) VALUES
-('101', 1, 'Deluxe', 3500.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi'),
-('102', 1, 'Deluxe', 3500.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi'),
-('103', 1, 'Suite', 5000.00, 3, TRUE, 'Sea view, AC, Hot water, WiFi, Kitchenette'),
-('104', 1, 'Standard', 2500.00, 2, FALSE, 'AC, Hot water, WiFi'),
-('105', 1, 'Deluxe', 3500.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi'),
-('201', 2, 'Standard', 2800.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('202', 2, 'Standard', 2800.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('203', 2, 'Deluxe', 3500.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi'),
-('204', 2, 'Standard', 2800.00, 2, FALSE, 'AC, Hot water, WiFi'),
-('205', 2, 'Standard', 2800.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('301', 3, 'Deluxe', 2500.00, 2, TRUE, 'Garden view, AC, Hot water, WiFi'),
-('302', 3, 'Standard', 1800.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('303', 3, 'Deluxe', 2500.00, 2, TRUE, 'Garden view, AC, Hot water, WiFi'),
-('304', 3, 'Standard', 1800.00, 2, FALSE, 'AC, Hot water, WiFi'),
-('305', 3, 'Suite', 3500.00, 3, TRUE, 'Garden view, AC, Hot water, WiFi, Kitchenette'),
-('401', 4, 'Deluxe', 2200.00, 2, TRUE, 'Hill view, AC, Hot water, WiFi'),
-('402', 4, 'Standard', 1500.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('403', 4, 'Deluxe', 2200.00, 2, TRUE, 'Hill view, AC, Hot water, WiFi'),
-('404', 4, 'Standard', 1500.00, 2, FALSE, 'AC, Hot water, WiFi'),
-('501', 5, 'Suite', 6000.00, 3, TRUE, 'City view, AC, Hot water, WiFi, Kitchenette'),
-('502', 5, 'Suite', 6000.00, 3, TRUE, 'City view, AC, Hot water, WiFi, Kitchenette'),
-('503', 5, 'Deluxe', 4200.00, 2, TRUE, 'City view, AC, Hot water, WiFi'),
-('504', 5, 'Deluxe', 4200.00, 2, TRUE, 'City view, AC, Hot water, WiFi'),
-('505', 5, 'Standard', 2800.00, 2, FALSE, 'AC, Hot water, WiFi'),
-('601', 6, 'Deluxe', 3800.00, 2, TRUE, 'Forest view, AC, Hot water, WiFi'),
-('602', 6, 'Deluxe', 3800.00, 2, TRUE, 'Forest view, AC, Hot water, WiFi'),
-('603', 6, 'Suite', 5500.00, 3, TRUE, 'Forest view, AC, Hot water, WiFi, Kitchenette'),
-('604', 6, 'Standard', 2500.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('701', 7, 'Deluxe', 2100.00, 2, TRUE, 'Lake view, AC, Hot water, WiFi'),
-('702', 7, 'Standard', 1400.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('703', 7, 'Deluxe', 2100.00, 2, FALSE, 'Lake view, AC, Hot water, WiFi'),
-('704', 7, 'Standard', 1400.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('801', 8, 'Deluxe', 3100.00, 2, TRUE, 'Beach view, AC, Hot water, WiFi'),
-('802', 8, 'Deluxe', 3100.00, 2, TRUE, 'Beach view, AC, Hot water, WiFi'),
-('803', 8, 'Suite', 4500.00, 3, TRUE, 'Beach view, AC, Hot water, WiFi, Kitchenette'),
-('804', 8, 'Standard', 2000.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('901', 9, 'Deluxe', 3600.00, 2, TRUE, 'Bay view, AC, Hot water, WiFi'),
-('902', 9, 'Deluxe', 3600.00, 2, FALSE, 'Bay view, AC, Hot water, WiFi'),
-('903', 9, 'Suite', 5000.00, 3, TRUE, 'Bay view, AC, Hot water, WiFi, Kitchenette'),
-('904', 9, 'Standard', 2400.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1001', 10, 'Deluxe', 2400.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi'),
-('1002', 10, 'Standard', 1600.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1003', 10, 'Deluxe', 2400.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi'),
-('1004', 10, 'Standard', 1600.00, 2, FALSE, 'AC, Hot water, WiFi'),
-('1101', 11, 'Standard', 1800.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1102', 11, 'Standard', 1800.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1103', 11, 'Deluxe', 2500.00, 2, TRUE, 'Heritage view, AC, Hot water, WiFi'),
-('1104', 11, 'Standard', 1800.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1201', 12, 'Standard', 2000.00, 2, TRUE, 'River view, AC, Hot water, WiFi'),
-('1202', 12, 'Standard', 2000.00, 2, TRUE, 'River view, AC, Hot water, WiFi'),
-('1203', 12, 'Deluxe', 2800.00, 2, TRUE, 'River view, AC, Hot water, WiFi'),
-('1204', 12, 'Standard', 2000.00, 2, FALSE, 'River view, AC, Hot water, WiFi'),
-('1301', 13, 'Standard', 1600.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1302', 13, 'Standard', 1600.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1303', 13, 'Deluxe', 2200.00, 2, TRUE, 'Temple view, AC, Hot water, WiFi'),
-('1304', 13, 'Standard', 1600.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1401', 14, 'Standard', 2300.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1402', 14, 'Deluxe', 3000.00, 2, TRUE, 'Valley view, AC, Hot water, WiFi'),
-('1403', 14, 'Standard', 2300.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1404', 14, 'Standard', 2300.00, 2, FALSE, 'AC, Hot water, WiFi'),
-('1501', 15, 'Standard', 2100.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1502', 15, 'Deluxe', 2900.00, 2, TRUE, 'Heritage view, AC, Hot water, WiFi'),
-('1503', 15, 'Standard', 2100.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1504', 15, 'Standard', 2100.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1601', 16, 'Standard', 1900.00, 2, TRUE, 'River view, AC, Hot water, WiFi'),
-('1602', 16, 'Deluxe', 2600.00, 2, TRUE, 'River view, AC, Hot water, WiFi'),
-('1603', 16, 'Standard', 1900.00, 2, FALSE, 'River view, AC, Hot water, WiFi'),
-('1604', 16, 'Standard', 1900.00, 2, TRUE, 'River view, AC, Hot water, WiFi'),
-('1701', 17, 'Standard', 1700.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi'),
-('1702', 17, 'Deluxe', 2400.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi'),
-('1703', 17, 'Standard', 1700.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi'),
-('1704', 17, 'Standard', 1700.00, 2, FALSE, 'Sea view, AC, Hot water, WiFi'),
-('1801', 18, 'Standard', 1800.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1802', 18, 'Deluxe', 2500.00, 2, TRUE, 'Coastal view, AC, Hot water, WiFi'),
-('1803', 18, 'Standard', 1800.00, 2, TRUE, 'AC, Hot water, WiFi'),
-('1804', 18, 'Standard', 1800.00, 2, TRUE, 'AC, Hot water, WiFi');
+-- ===================== BOOKING =====================
+CREATE TABLE IF NOT EXISTS booking (
+  bookingid VARCHAR(12) PRIMARY KEY,
+  userid VARCHAR(12),
+  checkindate DATE,
+  checkoutdate DATE,
+  totalprice DOUBLE NOT NULL,
+  bookingstatus VARCHAR(30) DEFAULT 'PENDING',
+  paymentid VARCHAR(12),
+  hotelname VARCHAR(150),
+  hotellocation VARCHAR(150),
+  guidename VARCHAR(150),
+  guideid VARCHAR(12),
+  numberofrooms INT DEFAULT 0,
+  bookingdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_booking_user
+    FOREIGN KEY (userid) REFERENCES users(userid)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_booking_payment
+    FOREIGN KEY (paymentid) REFERENCES payment(paymentid)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_booking_guide
+    FOREIGN KEY (guideid) REFERENCES guides(guideid)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  INDEX idx_booking_user (userid),
+  INDEX idx_booking_status (bookingstatus),
+  INDEX idx_booking_payment (paymentid),
+  INDEX idx_booking_checkin (checkindate)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 7. BOOKINGS TABLE (Empty - No Data)
--- ============================================
-CREATE TABLE bookings (
-    booking_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_Id INT,
-    hotel_Id INT,
-    room_Id INT,
-    check_in_Date DATE,
-    check_out_Date DATE,
-    total_price DECIMAL(12,2),
-    booking_status VARCHAR(50),
-    hotel_name VARCHAR(100),
-    hotel_location VARCHAR(100),
-    guide_name VARCHAR(100),
-    number_of_guests INT,
-    special_requests VARCHAR(300),
-    booking_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_Id) REFERENCES users(user_Id) ON DELETE CASCADE,
-    FOREIGN KEY (hotel_Id) REFERENCES hotels(hotel_Id) ON DELETE CASCADE,
-    FOREIGN KEY (room_Id) REFERENCES rooms(room_Id) ON DELETE CASCADE,
-    INDEX idx_user (user_Id),
-    INDEX idx_hotel (hotel_Id),
-    INDEX idx_status (booking_status),
-    INDEX idx_checkin (check_in_Date)
-);
+-- ===================== TRANSPORT BOOKING =====================
+CREATE TABLE IF NOT EXISTS transportbooking (
+  ticketid VARCHAR(12) PRIMARY KEY,
+  userid VARCHAR(12),
+  transporttype VARCHAR(50),
+  departurelocation VARCHAR(100),
+  arrivallocation VARCHAR(100),
+  departuredate DATE,
+  arrivaldate DATE,
+  numberofpassengers INT,
+  seatnumber VARCHAR(20),
+  bookingstatus VARCHAR(30) DEFAULT 'PENDING',
+  fare DOUBLE,
+  vehicleregistration VARCHAR(20),
+  vehiclecompany VARCHAR(100),
+  bookingdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_transport_user
+    FOREIGN KEY (userid) REFERENCES users(userid)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  INDEX idx_transport_user (userid),
+  INDEX idx_transport_status (bookingstatus),
+  INDEX idx_transport_departure (departuredate)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 8. PAYMENTS TABLE (Empty - No Data)
--- ============================================
-CREATE TABLE payments (
-    payment_id INT PRIMARY KEY AUTO_INCREMENT,
-    booking_id INT,
-    payment_method VARCHAR(50),
-    payment_status VARCHAR(50),
-    amount_paid DECIMAL(12,2),
-    transaction_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (booking_id) REFERENCES bookings(booking_id) ON DELETE CASCADE,
-    INDEX idx_booking (booking_id),
-    INDEX idx_status (payment_status),
-    INDEX idx_date (transaction_Date)
-);
+-- ===================== GUIDE BOOKING =====================
+CREATE TABLE IF NOT EXISTS guidebooking (
+  bookingid VARCHAR(12) PRIMARY KEY,
+  userid VARCHAR(12),
+  guideid VARCHAR(12),
+  bookingdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  tourdurationdays INT NOT NULL,
+  tourpurpose VARCHAR(100),
+  tourlocation VARCHAR(100),
+  tourstatus VARCHAR(30) DEFAULT 'PENDING',
+  guidefee DOUBLE,
+  paymentstatus VARCHAR(30) DEFAULT 'PENDING',
+  specialrequest VARCHAR(200),
+  CONSTRAINT fk_guidebooking_user
+    FOREIGN KEY (userid) REFERENCES users(userid)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_guidebooking_guide
+    FOREIGN KEY (guideid) REFERENCES guides(guideid)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  INDEX idx_guidebooking_user (userid),
+  INDEX idx_guidebooking_guide (guideid),
+  INDEX idx_guidebooking_status (tourstatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 9. TRANSPORT_BOOKING TABLE (50 records)
--- ============================================
-CREATE TABLE transport_booking (
-    booking_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_Id INT,
-    transport_Type VARCHAR(50),
-    departure_Location VARCHAR(100),
-    arrival_Location VARCHAR(100),
-    departure_Date DATE,
-    arrival_Date DATE,
-    number_of_Passengers INT,
-    seat_Number VARCHAR(20),
-    booking_status VARCHAR(50),
-    fare DECIMAL(10,2),
-    vehicle_Registration VARCHAR(20),
-    vehicle_Company VARCHAR(100),
-    booking_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_Id) REFERENCES users(user_Id) ON DELETE CASCADE,
-    INDEX idx_user (user_Id),
-    INDEX idx_status (booking_status),
-    INDEX idx_departure (departure_Date)
-);
+-- ===================== RATINGS =====================
+CREATE TABLE IF NOT EXISTS ratings (
+  ratingid VARCHAR(12) PRIMARY KEY,
+  userid VARCHAR(12),
+  ratingtype VARCHAR(20),
+  targetname VARCHAR(150),
+  rating INT,
+  review VARCHAR(500),
+  ratingdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ratings_user
+    FOREIGN KEY (userid) REFERENCES users(userid)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  INDEX idx_ratings_user (userid),
+  INDEX idx_ratings_type (ratingtype)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO transport_booking (user_Id, transport_Type, departure_Location, arrival_Location, departure_Date, arrival_Date, number_of_Passengers, seat_Number, booking_status, fare, vehicle_Registration, vehicle_Company) VALUES
-(NULL, 'Bus', 'Dhaka', 'Cox\'s Bazar', '2024-12-25', '2024-12-26', 1, 'A1', 'Confirmed', 800.00, 'BD-12AB', 'Green Line Transport'),
-(NULL, 'Bus', 'Dhaka', 'Sylhet', '2024-12-28', '2024-12-29', 1, 'B5', 'Confirmed', 900.00, 'BD-12CD', 'Hanif Enterprise'),
-(NULL, 'Train', 'Dhaka', 'Chittagong', '2025-01-05', '2025-01-05', 1, '12A', 'Confirmed', 600.00, 'TRN-001', 'Bangladesh Railway'),
-(NULL, 'Bus', 'Dhaka', 'Bandarban', '2025-01-08', '2025-01-09', 2, 'C3', 'Confirmed', 1600.00, 'BD-12EF', 'Shohag Paribahan'),
-(NULL, 'Bus', 'Dhaka', 'Khulna', '2025-01-12', '2025-01-13', 1, 'D7', 'Confirmed', 1000.00, 'BD-12GH', 'Ena Transport'),
-(NULL, 'Launch', 'Khulna', 'Sundarban', '2025-01-15', '2025-01-16', 2, 'Deck1-4', 'Confirmed', 2000.00, 'LS-001', 'Sundari Launch'),
-(NULL, 'Bus', 'Khulna', 'Rangamati', '2025-01-18', '2025-01-20', 1, 'E2', 'Pending', 1200.00, 'BD-12IJ', 'Sagor Paribahan'),
-(NULL, 'Launch', 'Dhaka', 'Saint Martin', '2025-01-22', '2025-01-23', 2, 'Deck2-5', 'Confirmed', 2500.00, 'LS-002', 'Island Tours Launch'),
-(NULL, 'Bus', 'Dhaka', 'Chittagong', '2025-02-01', '2025-02-02', 3, 'F1', 'Confirmed', 2400.00, 'BD-12KL', 'Royal Coach'),
-(NULL, 'Bus', 'Dhaka', 'Kuakata', '2025-02-03', '2025-02-05', 1, 'G4', 'Confirmed', 1100.00, 'BD-12MN', 'Southern Bus'),
-(NULL, 'Bus', 'Dhaka', 'Bagerhat', '2025-02-08', '2025-02-08', 2, 'H2', 'Confirmed', 1400.00, 'BD-12OP', 'Heritage Tours Transport'),
-(NULL, 'Launch', 'Barisal', 'Sundarban', '2025-02-10', '2025-02-11', 1, 'Cabin-A', 'Confirmed', 1800.00, 'LS-003', 'River Cruise'),
-(NULL, 'Bus', 'Dhaka', 'Paharpur', '2025-02-13', '2025-02-13', 1, 'I6', 'Pending', 700.00, 'BD-12QR', 'Pilgrim Transport'),
-(NULL, 'Train', 'Dhaka', 'Mymensingh', '2025-02-16', '2025-02-16', 2, '8B', 'Confirmed', 400.00, 'TRN-002', 'Bangladesh Railway'),
-(NULL, 'Bus', 'Dhaka', 'Comilla', '2025-02-18', '2025-02-18', 1, 'J3', 'Confirmed', 650.00, 'BD-12ST', 'East Bengal Transport'),
-(NULL, 'Launch', 'Chandpur', 'River Tours', '2025-02-22', '2025-02-22', 2, 'Speed-1', 'Confirmed', 1200.00, 'LS-004', 'Chandpur Boat Service'),
-(NULL, 'Bus', 'Dhaka', 'Lakshmipur', '2025-02-25', '2025-02-26', 1, 'K5', 'Confirmed', 950.00, 'BD-12UV', 'Coastal Lines'),
-(NULL, 'Bus', 'Chittagong', 'Noakhali', '2025-02-28', '2025-03-01', 1, 'L1', 'Confirmed', 600.00, 'BD-12WX', 'Inter District Transport'),
-(NULL, 'Bus', 'Dhaka', 'Rajshahi', '2025-03-02', '2025-03-04', 2, 'M4', 'Pending', 1800.00, 'BD-12YZ', 'Silk City Express'),
-(NULL, 'Bus', 'Rajshahi', 'Bogra', '2025-03-05', '2025-03-05', 1, 'N2', 'Confirmed', 500.00, 'BD-13AB', 'Regional Transport'),
-(NULL, 'Bus', 'Bogra', 'Dinajpur', '2025-03-07', '2025-03-08', 2, 'O5', 'Confirmed', 1000.00, 'BD-13CD', 'Northern Lines'),
-(NULL, 'Bus', 'Dhaka', 'Jessore', '2025-03-10', '2025-03-11', 1, 'P3', 'Cancelled', 850.00, 'BD-13EF', 'Border Transport'),
-(NULL, 'Bus', 'Dhaka', 'Srimangal', '2025-03-12', '2025-03-14', 2, 'Q6', 'Confirmed', 1500.00, 'BD-13GH', 'Northeast Express'),
-(NULL, 'Launch', 'Cox\'s Bazar', 'Teknaf', '2025-03-15', '2025-03-15', 1, 'Deck3-2', 'Confirmed', 500.00, 'LS-005', 'Teknaf Water Transport'),
-(NULL, 'Bus', 'Dhaka', 'Cox\'s Bazar', '2025-03-18', '2025-03-20', 2, 'R4', 'Confirmed', 1600.00, 'BD-13IJ', 'Premier Coach'),
-(NULL, 'Train', 'Chittagong', 'Dhaka', '2025-03-22', '2025-03-23', 1, '5C', 'Pending', 700.00, 'TRN-003', 'Bangladesh Railway'),
-(NULL, 'Bus', 'Sylhet', 'Dhaka', '2025-03-25', '2025-03-26', 2, 'S2', 'Confirmed', 900.00, 'BD-13KL', 'Tea Garden Express'),
-(NULL, 'Launch', 'Khulna', 'Satkhira', '2025-03-28', '2025-03-28', 1, 'Boat-1', 'Confirmed', 400.00, 'LS-006', 'Southwest Waterways'),
-(NULL, 'Bus', 'Bandarban', 'Chittagong', '2025-04-01', '2025-04-01', 1, 'T5', 'Confirmed', 700.00, 'BD-13MN', 'Hill Tracts Transport'),
-(NULL, 'Bus', 'Dhaka', 'Barisal', '2025-04-03', '2025-04-04', 2, 'U1', 'Confirmed', 1200.00, 'BD-13OP', 'River Delta Transport'),
-(NULL, 'Bus', 'Dhaka', 'Jamalpur', '2025-04-05', '2025-04-05', 1, 'V3', 'Pending', 600.00, 'BD-13QR', 'Industrial Area Bus'),
-(NULL, 'Train', 'Dhaka', 'Rajshahi', '2025-04-08', '2025-04-09', 2, '15D', 'Confirmed', 1000.00, 'TRN-004', 'Bangladesh Railway'),
-(NULL, 'Bus', 'Bogra', 'Naogaon', '2025-04-10', '2025-04-10', 1, 'W4', 'Confirmed', 450.00, 'BD-13ST', 'West Bengal Route'),
-(NULL, 'Bus', 'Dinajpur', 'Thakurgaon', '2025-04-12', '2025-04-12', 1, 'X2', 'Confirmed', 350.00, 'BD-13UV', 'Border Town Transport'),
-(NULL, 'Bus', 'Dhaka', 'Mymensingh', '2025-04-15', '2025-04-15', 2, 'Y5', 'Confirmed', 800.00, 'BD-13WX', 'Central Route Express'),
-(NULL, 'Launch', 'Barisal', 'Pirojpur', '2025-04-18', '2025-04-18', 1, 'Deck4-1', 'Confirmed', 600.00, 'LS-007', 'Delta Waterways'),
-(NULL, 'Bus', 'Noakhali', 'Comilla', '2025-04-20', '2025-04-20', 1, 'Z3', 'Confirmed', 500.00, 'BD-13YZ', 'East Coast Transport'),
-(NULL, 'Bus', 'Dhaka', 'Tangail', '2025-04-22', '2025-04-22', 2, 'AA2', 'Pending', 550.00, 'BD-14AB', 'Central Transit'),
-(NULL, 'Bus', 'Gazipur', 'Narayanganj', '2025-04-25', '2025-04-25', 1, 'AB4', 'Confirmed', 350.00, 'BD-14CD', 'Industrial Transport'),
-(NULL, 'Bus', 'Dhaka', 'Manikganj', '2025-04-28', '2025-04-28', 1, 'AC1', 'Confirmed', 450.00, 'BD-14EF', 'Pottery Route Express'),
-(NULL, 'Launch', 'Shariatpur', 'Sundarban', '2025-05-01', '2025-05-02', 2, 'Cabin-B', 'Confirmed', 2000.00, 'LS-008', 'Tiger Safari Launch'),
-(NULL, 'Train', 'Comilla', 'Chittagong', '2025-05-03', '2025-05-03', 1, '10A', 'Confirmed', 500.00, 'TRN-005', 'Bangladesh Railway'),
-(NULL, 'Bus', 'Chandpur', 'Lakshmipur', '2025-05-05', '2025-05-05', 1, 'AD3', 'Confirmed', 400.00, 'BD-14GH', 'Coastal Connector'),
-(NULL, 'Bus', 'Rajshahi', 'Khulna', '2025-05-08', '2025-05-08', 2, 'AE5', 'Confirmed', 900.00, 'BD-14IJ', 'River Route Express'),
-(NULL, 'Bus', 'Dhaka', 'Jashore', '2025-05-10', '2025-05-11', 1, 'AF2', 'Pending', 1000.00, 'BD-14KL', 'Border Gateway Bus'),
-(NULL, 'Launch', 'Bhola', 'Barisal', '2025-05-13', '2025-05-13', 1, 'Speed-2', 'Confirmed', 700.00, 'LS-009', 'Island Express Launch'),
-(NULL, 'Bus', 'Sylhet', 'Moulvibazar', '2025-05-15', '2025-05-15', 2, 'AG3', 'Confirmed', 600.00, 'BD-14MN', 'Tea Country Tours'),
-(NULL, 'Train', 'Khulna', 'Jessore', '2025-05-18', '2025-05-18', 1, '6D', 'Confirmed', 450.00, 'TRN-006', 'Bangladesh Railway'),
-(NULL, 'Bus', 'Dhaka', 'Sherpur', '2025-05-20', '2025-05-20', 1, 'AH4', 'Confirmed', 700.00, 'BD-14OP', 'Pottery Village Express'),
-(NULL, 'Bus', 'Dhaka', 'Netrokona', '2025-05-22', '2025-05-22', 2, 'AI1', 'Confirmed', 950.00, 'BD-14QR', 'Handloom Route Express');
+-- ===================== WEATHER =====================
+CREATE TABLE IF NOT EXISTS weather (
+  weatherid INT AUTO_INCREMENT PRIMARY KEY,
+  division VARCHAR(60),
+  temperature DOUBLE,
+  weathercondition VARCHAR(50),
+  humidity INT,
+  windspeed DOUBLE,
+  lastupdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_weather_division (division)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 10. GUIDE_BOOKING TABLE (Empty - No Data)
--- ============================================
-CREATE TABLE guide_booking (
-    booking_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_Id INT,
-    guide_Id INT,
-    booking_Date DATE,
-    tour_Duration_Days INT,
-    tour_Purpose VARCHAR(100),
-    tour_Location VARCHAR(100),
-    tour_Status VARCHAR(50),
-    guide_Fee DECIMAL(10,2),
-    payment_Status VARCHAR(50),
-    special_Request VARCHAR(200),
-    FOREIGN KEY (user_Id) REFERENCES users(user_Id) ON DELETE CASCADE,
-    FOREIGN KEY (guide_Id) REFERENCES guides(guide_Id) ON DELETE CASCADE,
-    INDEX idx_user (user_Id),
-    INDEX idx_guide (guide_Id),
-    INDEX idx_status (tour_Status)
-);
+-- ===================== FOOD MENU =====================
+CREATE TABLE IF NOT EXISTS foodmenu (
+  menuid VARCHAR(12) PRIMARY KEY,
+  hotelid VARCHAR(12),
+  foodname VARCHAR(100),
+  foodcategory VARCHAR(50),
+  foodprice DECIMAL(10,2),
+  fooddescription VARCHAR(200),
+  isavailable BOOLEAN DEFAULT TRUE,
+  cuisinetype VARCHAR(50),
+  isvegetarian BOOLEAN DEFAULT FALSE,
+  CONSTRAINT fk_foodmenu_hotel
+    FOREIGN KEY (hotelid) REFERENCES hotels(hotelid)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  INDEX idx_foodmenu_hotel (hotelid),
+  INDEX idx_foodmenu_category (foodcategory)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 11. WEATHER TABLE (40 records)
--- ============================================
-CREATE TABLE weather (
-    weather_id INT PRIMARY KEY AUTO_INCREMENT,
-    location VARCHAR(100),
-    weather_date DATE,
-    temperature_celcius DECIMAL(5,2),
-    humidity_percent INT,
-    weather_condition VARCHAR(50),
-    wind_speed_kmh DECIMAL(5,2),
-    precipitation_mm DECIMAL(5,2),
-    uv_index INT,
-    visibility_km INT,
-    best_for_Activity VARCHAR(100)
-);
+-- ===================== AUDIT + SESSION LOGS =====================
+CREATE TABLE IF NOT EXISTS auditlogs (
+  logid INT AUTO_INCREMENT PRIMARY KEY,
+  eventtype VARCHAR(60) NOT NULL,
+  userid VARCHAR(12),
+  email VARCHAR(120),
+  category VARCHAR(30),
+  details VARCHAR(500),
+  ipaddress VARCHAR(45),
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_audit_user (userid),
+  INDEX idx_audit_email (email),
+  INDEX idx_audit_time (timestamp)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO weather (location, weather_date, temperature_celcius, humidity_percent, weather_condition, wind_speed_kmh, precipitation_mm, uv_index, visibility_km, best_for_Activity) VALUES
-('Cox\'s Bazar', '2024-12-30', 22.5, 65, 'Clear', 8.5, 0.0, 6, 10, 'Beach activities'),
-('Sylhet', '2024-12-30', 18.2, 58, 'Partly Cloudy', 5.0, 0.0, 4, 12, 'Tea garden tours'),
-('Dhaka', '2024-12-30', 21.0, 62, 'Clear', 6.0, 0.0, 5, 11, 'City sightseeing'),
-('Bandarban', '2024-12-30', 16.8, 70, 'Cloudy', 4.5, 2.5, 3, 8, 'Mountain trekking'),
-('Khulna', '2024-12-30', 19.5, 68, 'Clear', 7.0, 0.0, 5, 10, 'Sundarban safari'),
-('Cox\'s Bazar', '2025-01-01', 23.0, 63, 'Sunny', 9.0, 0.0, 7, 11, 'Beach walks'),
-('Sylhet', '2025-01-01', 19.5, 60, 'Clear', 4.5, 0.0, 5, 13, 'Garden exploration'),
-('Dhaka', '2025-01-01', 22.5, 60, 'Clear', 5.5, 0.0, 6, 12, 'Heritage tours'),
-('Rangamati', '2025-01-01', 17.0, 72, 'Cloudy', 5.0, 1.0, 3, 9, 'Lake tours'),
-('Chittagong', '2025-01-01', 20.5, 65, 'Clear', 6.5, 0.0, 6, 11, 'Bay exploration'),
-('Saint Martin', '2025-01-05', 21.0, 64, 'Clear', 8.0, 0.0, 6, 10, 'Island hopping'),
-('Kuakata', '2025-01-05', 22.0, 66, 'Sunny', 7.5, 0.0, 7, 11, 'Sunset viewing'),
-('Bagerhat', '2025-01-05', 20.5, 62, 'Clear', 5.5, 0.0, 5, 11, 'Mosque visiting'),
-('Comilla', '2025-01-10', 19.0, 61, 'Clear', 5.0, 0.0, 5, 12, 'Temple tours'),
-('Barisal', '2025-01-10', 21.5, 64, 'Partly Cloudy', 6.0, 0.5, 5, 10, 'River cruises'),
-('Paharpur', '2025-01-15', 18.5, 59, 'Clear', 4.5, 0.0, 4, 12, 'Monastery visits'),
-('Mymensingh', '2025-01-15', 17.5, 65, 'Cloudy', 5.5, 1.5, 3, 9, 'Campus tours'),
-('Chandpur', '2025-01-20', 20.0, 66, 'Clear', 6.0, 0.0, 5, 11, 'River exploration'),
-('Lakshmipur', '2025-01-20', 21.5, 65, 'Sunny', 7.0, 0.0, 6, 10, 'Fishing village'),
-('Noakhali', '2025-01-20', 20.5, 68, 'Partly Cloudy', 6.5, 0.0, 5, 10, 'Island touring'),
-('Rajshahi', '2025-02-01', 19.5, 60, 'Clear', 4.5, 0.0, 5, 13, 'Silk market'),
-('Bogra', '2025-02-01', 18.0, 59, 'Clear', 4.0, 0.0, 4, 12, 'Heritage sites'),
-('Dinajpur', '2025-02-01', 17.5, 62, 'Cloudy', 5.0, 1.0, 3, 10, 'Silk region'),
-('Jessore', '2025-02-05', 18.5, 61, 'Clear', 4.5, 0.0, 4, 12, 'Border towns'),
-('Srimangal', '2025-02-05', 19.5, 66, 'Clear', 5.5, 0.0, 5, 11, 'Tea gardens'),
-('Teknaf', '2025-02-10', 22.5, 67, 'Sunny', 8.5, 0.0, 7, 11, 'Beach exploration'),
-('Sonargaon', '2025-02-10', 20.0, 64, 'Clear', 5.0, 0.0, 5, 12, 'Museum visits'),
-('Tangail', '2025-02-15', 19.0, 62, 'Clear', 4.5, 0.0, 5, 12, 'Sari workshops'),
-('Gazipur', '2025-02-15', 19.5, 63, 'Partly Cloudy', 5.0, 0.5, 5, 11, 'Industrial tours'),
-('Narayanganj', '2025-02-15', 20.5, 65, 'Clear', 5.5, 0.0, 5, 11, 'River views'),
-('Manikganj', '2025-02-20', 19.5, 62, 'Clear', 4.5, 0.0, 5, 12, 'Pottery tours'),
-('Shariatpur', '2025-02-20', 21.0, 64, 'Clear', 6.0, 0.0, 5, 11, 'Fishing activities'),
-('Bhola', '2025-03-01', 22.0, 65, 'Sunny', 7.5, 0.0, 6, 10, 'Island tours'),
-('Pirojpur', '2025-03-01', 21.5, 66, 'Clear', 6.5, 0.0, 6, 11, 'River exploration'),
-('Moulvibazar', '2025-03-05', 20.5, 67, 'Clear', 5.5, 0.0, 5, 11, 'Tea estates'),
-('Khagrachari', '2025-03-05', 18.5, 71, 'Cloudy', 4.5, 2.0, 3, 8, 'Hill trekking'),
-('Narsingdi', '2025-03-10', 20.0, 63, 'Clear', 5.0, 0.0, 5, 12, 'Riverside walks'),
-('Munsiganj', '2025-03-10', 20.5, 64, 'Partly Cloudy', 5.5, 0.5, 5, 11, 'Heritage tours'),
-('Jamalpur', '2025-03-15', 17.5, 66, 'Cloudy', 5.0, 1.5, 3, 9, 'Industrial heritage'),
-('Netrokona', '2025-03-15', 18.5, 68, 'Clear', 4.5, 0.0, 4, 10, 'Handloom centers');
+CREATE TABLE IF NOT EXISTS session_logs (
+  logid INT AUTO_INCREMENT PRIMARY KEY,
+  eventtype VARCHAR(60) NOT NULL,
+  userid VARCHAR(12),
+  details VARCHAR(255),
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_session_user (userid),
+  INDEX idx_session_time (timestamp)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- 12. FOOD_MENU TABLE (40 records)
--- ============================================
-CREATE TABLE food_menu (
-    menu_id INT PRIMARY KEY AUTO_INCREMENT,
-    hotel_Id INT,
-    food_Name VARCHAR(100),
-    food_Category VARCHAR(50),
-    food_Price DECIMAL(10,2),
-    food_Description VARCHAR(200),
-    availability BOOLEAN,
-    cuisine_Type VARCHAR(50),
-    is_Vegetarian BOOLEAN,
-    FOREIGN KEY (hotel_Id) REFERENCES hotels(hotel_Id) ON DELETE CASCADE,
-    INDEX idx_hotel (hotel_Id),
-    INDEX idx_category (food_Category)
-);
+-- =========================================================
+-- ===================== SEED DATA =========================
+-- =========================================================
 
-INSERT INTO food_menu (hotel_Id, food_Name, food_Category, food_Price, food_Description, availability, cuisine_Type, is_Vegetarian) VALUES
-(1, 'Grilled Fish', 'Seafood', 450.00, 'Fresh grilled fish with lemon butter', TRUE, 'Bangladeshi', FALSE),
-(1, 'Prawn Curry', 'Seafood', 500.00, 'Spiced prawn curry with rice', TRUE, 'Bangladeshi', FALSE),
-(1, 'Biryani', 'Main Course', 350.00, 'Fragrant basmati rice with meat', TRUE, 'Bangladeshi', FALSE),
-(1, 'Vegetable Samosa', 'Appetizer', 120.00, 'Crispy pastry with vegetable filling', TRUE, 'Bangladeshi', TRUE),
-(1, 'Mango Lassi', 'Beverage', 150.00, 'Fresh mango yogurt drink', TRUE, 'Bangladeshi', TRUE),
-(2, 'Crab Masala', 'Seafood', 600.00, 'Spiced crab with rice', TRUE, 'Bangladeshi', FALSE),
-(2, 'Hilsa Fish', 'Seafood', 550.00, 'National fish, lightly spiced', TRUE, 'Bangladeshi', FALSE),
-(2, 'Lentil Soup', 'Appetizer', 180.00, 'Traditional lentil soup', TRUE, 'Bangladeshi', TRUE),
-(2, 'Naan Bread', 'Bread', 100.00, 'Traditional Indian flatbread', TRUE, 'Indian', TRUE),
-(2, 'Gulab Jamun', 'Dessert', 200.00, 'Sweet milk balls in syrup', TRUE, 'Indian', TRUE),
-(3, 'Tea and Snacks', 'Beverage', 200.00, 'Local tea with pastries', TRUE, 'Bangladeshi', TRUE),
-(3, 'Vegetables Biryani', 'Main Course', 300.00, 'Rice with mixed vegetables', TRUE, 'Bangladeshi', TRUE),
-(3, 'Chapati', 'Bread', 80.00, 'Whole wheat flatbread', TRUE, 'Bangladeshi', TRUE),
-(3, 'Coconut Rice', 'Main Course', 320.00, 'Rice cooked in coconut milk', TRUE, 'Bangladeshi', FALSE),
-(3, 'Jackfruit Curry', 'Main Course', 280.00, 'Young jackfruit in spiced gravy', TRUE, 'Bangladeshi', TRUE),
-(4, 'Chicken Roast', 'Main Course', 380.00, 'Roasted chicken with spices', TRUE, 'Bangladeshi', FALSE),
-(4, 'Bamboo Shoot Curry', 'Vegetable', 250.00, 'Local bamboo shoots in curry', TRUE, 'Bangladeshi', TRUE),
-(4, 'Rice Porridge', 'Main Course', 180.00, 'Soft rice with broth', TRUE, 'Bangladeshi', TRUE),
-(4, 'Hill Vegetables', 'Vegetable', 280.00, 'Fresh hill station vegetables', TRUE, 'Bangladeshi', TRUE),
-(4, 'Local Tea', 'Beverage', 80.00, 'Fresh local tea', TRUE, 'Bangladeshi', TRUE),
-(5, 'Tandoori Chicken', 'Main Course', 450.00, 'Clay oven grilled chicken', TRUE, 'Indian', FALSE),
-(5, 'Paneer Tikka', 'Appetizer', 350.00, 'Grilled cottage cheese', TRUE, 'Indian', TRUE),
-(5, 'Butter Chicken', 'Main Course', 420.00, 'Creamy tomato chicken curry', TRUE, 'Indian', FALSE),
-(5, 'Sambar', 'Main Course', 280.00, 'South Indian vegetable stew', TRUE, 'Indian', TRUE),
-(5, 'Kheer', 'Dessert', 220.00, 'Rice pudding with condensed milk', TRUE, 'Indian', TRUE),
-(6, 'Tiger Prawn Curry', 'Seafood', 700.00, 'Large prawns in spiced gravy', TRUE, 'Bangladeshi', FALSE),
-(6, 'Pabda Fish', 'Seafood', 420.00, 'Fresh water fish delicacy', TRUE, 'Bangladeshi', FALSE),
-(6, 'Vegetable Fries', 'Vegetable', 200.00, 'Crispy fried vegetables', TRUE, 'Bangladeshi', TRUE),
-(6, 'Rice Pudding', 'Dessert', 250.00, 'Sweet rice with milk', TRUE, 'Bangladeshi', TRUE),
-(6, 'Fresh Fruit Salad', 'Dessert', 300.00, 'Mixed seasonal fruits', TRUE, 'Bangladeshi', TRUE),
-(7, 'Khichuri', 'Main Course', 220.00, 'Rice and lentil comfort food', TRUE, 'Bangladeshi', TRUE),
-(7, 'Aloo Vaji', 'Vegetable', 200.00, 'Potato curry with spices', TRUE, 'Bangladeshi', TRUE),
-(7, 'Sweet Chutney', 'Condiment', 150.00, 'Homemade sweet preserves', TRUE, 'Bangladeshi', TRUE),
-(8, 'Coral Fish', 'Seafood', 520.00, 'Fresh reef fish, lightly grilled', TRUE, 'Bangladeshi', FALSE),
-(8, 'Squid Fry', 'Appetizer', 380.00, 'Crispy fried squid', TRUE, 'Bangladeshi', FALSE),
-(8, 'Mixed Vegetable', 'Vegetable', 240.00, 'Seasonal vegetables in light sauce', TRUE, 'Bangladeshi', TRUE),
-(8, 'Tropical Smoothie', 'Beverage', 250.00, 'Island fruit smoothie', TRUE, 'Bangladeshi', TRUE),
-(9, 'Beef Roast', 'Main Course', 480.00, 'Slow-cooked beef with spices', TRUE, 'Bangladeshi', FALSE),
-(9, 'Dal Bhat', 'Main Course', 200.00, 'Rice and lentils', TRUE, 'Bangladeshi', TRUE),
-(9, 'Chicken Tikka', 'Appetizer', 320.00, 'Marinated and grilled chicken', TRUE, 'Indian', FALSE),
-(10, 'Hilsa Preparation', 'Seafood', 580.00, 'Multiple hilsa fish preparations', TRUE, 'Bangladeshi', FALSE);
+INSERT INTO managers
+(managerid, managername, manageremail, managerphone, managerpassword, hotelname, hotelnid, registrationnumber, status, registrationdate)
+VALUES
+('MGR001', 'Ahmed Khan', 'ahmed.khan@hotelgroup.com', '01711111001', 'pass@123456', 'Green Valley Resort', 'NID123001', 'REG001', 'ACTIVE', NOW()),
+('MGR002', 'Rajesh Kumar', 'rajesh.k@hotelgroup.com', '01711111002', 'pass@123456', 'Beach Paradise Hotels', 'NID123002', 'REG002', 'ACTIVE', NOW()),
+('MGR003', 'Fatima Islam', 'fatima.islam@hotelgroup.com', '01711111003', 'pass@123456', 'Dhaka Heritage Hotel', 'NID123003', 'REG003', 'ACTIVE', NOW()),
+('MGR004', 'Kamal Hassan', 'kamal.hassan@hotelgroup.com', '01711111004', 'pass@123456', 'Sundarban Safari Lodge', 'NID123004', 'REG004', 'ACTIVE', NOW()),
+('MGR005', 'Rafi Ahmed', 'rafi.ahmed@hotelgroup.com', '01711111005', 'pass@123456', 'Chittagong Bay Hotel', 'NID123005', 'REG005', 'ACTIVE', NOW());
+
+INSERT INTO hotels
+(hotelid, hotelname, hotellocation, hotelpricepernight, hotelrating, roomavailability, roomcategory, totalrooms, hotelfeatures, managerid, registrationdate)
+VALUES
+('HTL001', 'Green Valley Resort', 'Cox''s Bazar', 3500.00, 4.8, 25, 'Luxury', 30, 'Sea view, AC, WiFi, Pool, Spa', 'MGR001', NOW()),
+('HTL002', 'Beach Paradise Hotels', 'Cox''s Bazar', 2800.00, 4.7, 18, 'Standard', 20, 'Beach access, AC, WiFi, Restaurant', 'MGR002', NOW()),
+('HTL003', 'Dhaka Heritage Hotel', 'Dhaka', 4200.00, 4.9, 32, 'Luxury', 40, 'Heritage decor, WiFi, Restaurant, Gym', 'MGR003', NOW()),
+('HTL004', 'Sundarban Safari Lodge', 'Khulna', 3800.00, 4.8, 20, 'Deluxe', 25, 'Eco-friendly, Boat tours, WiFi, Nature walks', 'MGR004', NOW()),
+('HTL005', 'Chittagong Bay Hotel', 'Chittagong', 3600.00, 4.7, 22, 'Deluxe', 28, 'Bay view, AC, WiFi, Gym, Conference Hall', 'MGR005', NOW()),
+('HTL006', 'Sylhet Tea Estate Hotel', 'Sylhet', 2500.00, 4.6, 15, 'Standard', 18, 'Garden view, AC, WiFi, Tea house', NULL, NOW()),
+('HTL007', 'Mountain View Resort', 'Bandarban', 2200.00, 4.5, 12, 'Standard', 15, 'Hill view, Trekking, WiFi, Restaurant', NULL, NOW()),
+('HTL008', 'Rangamati Hill Resort', 'Rangamati', 2100.00, 4.4, 14, 'Standard', 17, 'Lake view, AC, WiFi, Boat rental', NULL, NOW()),
+('HTL009', 'Saint Martin Beach Resort', 'Saint Martin', 3100.00, 4.6, 16, 'Deluxe', 20, 'Beach, Water sports, WiFi, Diving center', NULL, NOW()),
+('HTL010', 'Kuakata Beach Resort', 'Kuakata', 2400.00, 4.5, 13, 'Standard', 16, 'Beach, Sunset view, WiFi, Restaurant', NULL, NOW());
+
+INSERT INTO rooms
+(roomid, roomnumber, hotelid, roomtype, roomprice, roomcapacity, isavailable, roomfeatures)
+VALUES
+('ROOM001', '101', 'HTL001', 'Deluxe', 3500.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi, TV'),
+('ROOM002', '102', 'HTL001', 'Deluxe', 3500.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi, TV'),
+('ROOM003', '103', 'HTL001', 'Suite', 5000.00, 3, TRUE, 'Sea view, AC, Hot water, WiFi, Kitchenette'),
+('ROOM004', '104', 'HTL001', 'Standard', 2500.00, 2, FALSE, 'AC, Hot water, WiFi, TV'),
+('ROOM005', '105', 'HTL001', 'Deluxe', 3500.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi, TV'),
+
+('ROOM006', '201', 'HTL002', 'Standard', 2800.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+('ROOM007', '202', 'HTL002', 'Standard', 2800.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+('ROOM008', '203', 'HTL002', 'Deluxe', 3500.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi, TV'),
+('ROOM009', '204', 'HTL002', 'Standard', 2800.00, 2, FALSE, 'AC, Hot water, WiFi, TV'),
+('ROOM010', '205', 'HTL002', 'Standard', 2800.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+
+('ROOM011', '301', 'HTL003', 'Suite', 6000.00, 3, TRUE, 'City view, AC, Hot water, WiFi, Kitchenette'),
+('ROOM012', '302', 'HTL003', 'Deluxe', 4200.00, 2, TRUE, 'City view, AC, Hot water, WiFi, TV'),
+('ROOM013', '303', 'HTL003', 'Deluxe', 4200.00, 2, TRUE, 'City view, AC, Hot water, WiFi, TV'),
+('ROOM014', '304', 'HTL003', 'Standard', 2800.00, 2, FALSE, 'AC, Hot water, WiFi, TV'),
+('ROOM015', '305', 'HTL003', 'Suite', 6000.00, 3, TRUE, 'City view, AC, Hot water, WiFi, Kitchenette'),
+
+('ROOM016', '401', 'HTL004', 'Deluxe', 3800.00, 2, TRUE, 'Forest view, AC, Hot water, WiFi, TV'),
+('ROOM017', '402', 'HTL004', 'Deluxe', 3800.00, 2, TRUE, 'Forest view, AC, Hot water, WiFi, TV'),
+('ROOM018', '403', 'HTL004', 'Suite', 5500.00, 3, TRUE, 'Forest view, AC, Hot water, WiFi, Kitchenette'),
+('ROOM019', '404', 'HTL004', 'Standard', 2500.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+('ROOM020', '405', 'HTL004', 'Standard', 2500.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+
+('ROOM021', '501', 'HTL005', 'Deluxe', 3600.00, 2, TRUE, 'Bay view, AC, Hot water, WiFi, TV'),
+('ROOM022', '502', 'HTL005', 'Deluxe', 3600.00, 2, FALSE, 'Bay view, AC, Hot water, WiFi, TV'),
+('ROOM023', '503', 'HTL005', 'Suite', 5000.00, 3, TRUE, 'Bay view, AC, Hot water, WiFi, Kitchenette'),
+('ROOM024', '504', 'HTL005', 'Standard', 2400.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+
+('ROOM025', '601', 'HTL006', 'Deluxe', 2500.00, 2, TRUE, 'Garden view, AC, Hot water, WiFi, TV'),
+('ROOM026', '602', 'HTL006', 'Standard', 1800.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+('ROOM027', '603', 'HTL006', 'Deluxe', 2500.00, 2, TRUE, 'Garden view, AC, Hot water, WiFi, TV'),
+
+('ROOM028', '701', 'HTL007', 'Deluxe', 2200.00, 2, TRUE, 'Hill view, AC, Hot water, WiFi, TV'),
+('ROOM029', '702', 'HTL007', 'Standard', 1500.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+('ROOM030', '703', 'HTL007', 'Deluxe', 2200.00, 2, TRUE, 'Hill view, AC, Hot water, WiFi, TV'),
+
+('ROOM031', '801', 'HTL008', 'Deluxe', 2100.00, 2, TRUE, 'Lake view, AC, Hot water, WiFi, TV'),
+('ROOM032', '802', 'HTL008', 'Standard', 1400.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+('ROOM033', '803', 'HTL008', 'Deluxe', 2100.00, 2, FALSE, 'Lake view, AC, Hot water, WiFi, TV'),
+
+('ROOM034', '901', 'HTL009', 'Deluxe', 3100.00, 2, TRUE, 'Beach view, AC, Hot water, WiFi, TV'),
+('ROOM035', '902', 'HTL009', 'Deluxe', 3100.00, 2, TRUE, 'Beach view, AC, Hot water, WiFi, TV'),
+('ROOM036', '903', 'HTL009', 'Suite', 4500.00, 3, TRUE, 'Beach view, AC, Hot water, WiFi, Kitchenette'),
+
+('ROOM037', '1001', 'HTL010', 'Deluxe', 2400.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi, TV'),
+('ROOM038', '1002', 'HTL010', 'Standard', 1600.00, 2, TRUE, 'AC, Hot water, WiFi, TV'),
+('ROOM039', '1003', 'HTL010', 'Deluxe', 2400.00, 2, TRUE, 'Sea view, AC, Hot water, WiFi, TV'),
+('ROOM040', '1004', 'HTL010', 'Standard', 1600.00, 2, FALSE, 'AC, Hot water, WiFi, TV');
+
+INSERT INTO touristspots
+(spotid, spotname, division, district, spotaddress, description, entryfee, rating, totalvisitors, bestseason, visitinghours)
+VALUES
+('SPOT001', 'Cox''s Bazar Beach', 'Chittagong', 'Cox''s Bazar', 'Cox''s Bazar Sadar', 'World''s longest unbroken sandy beach (120 km) with golden sands and crystal clear waters', 0.00, 4.9, 15000, 'October - March', '6:00 AM - 6:00 PM'),
+('SPOT002', 'Lalbagh Fort', 'Dhaka', 'Dhaka', 'Lalbagh, Dhaka', 'Historic 17th century Mughal fort with stunning architecture and museum', 100.00, 4.7, 8500, 'October - March', '9:00 AM - 5:00 PM'),
+('SPOT003', 'Ahsan Manzil', 'Dhaka', 'Dhaka', 'Arambagh, Dhaka', 'Pink Palace - former residence of Dhaka Nawabs with rich history', 100.00, 4.8, 7500, 'Year-round', '9:00 AM - 5:00 PM'),
+('SPOT004', 'Sundarbans National Park', 'Khulna', 'Khulna', 'Khulna', 'World''s largest mangrove forest with Bengal tigers and diverse wildlife', 5000.00, 4.9, 5000, 'November - February', '8:00 AM - 4:00 PM'),
+('SPOT005', 'Sylhet Tea Gardens', 'Sylhet', 'Sylhet', 'Sylhet Sadar', 'Beautiful tea gardens with rolling hills, green valleys and tea production tours', 0.00, 4.8, 12000, 'January - April', '7:00 AM - 6:00 PM'),
+('SPOT006', 'Saint Martin Island', 'Chittagong', 'Cox''s Bazar', 'Saint Martin Island', 'Scenic island with coral reefs, pristine beaches and water sports activities', 0.00, 4.7, 8000, 'October - March', '6:00 AM - 6:00 PM'),
+('SPOT007', 'Bandarban Hill Tracts', 'Chittagong', 'Bandarban', 'Bandarban Sadar', 'Beautiful hill stations with tribal culture, traditional crafts and trekking routes', 0.00, 4.8, 6500, 'November - February', '8:00 AM - 5:00 PM'),
+('SPOT008', 'Rangamati Lake', 'Chittagong', 'Rangamati', 'Rangamati Sadar', 'Scenic artificial lake surrounded by green hills with boat tours and nature walks', 0.00, 4.6, 7000, 'October - March', '8:00 AM - 5:00 PM'),
+('SPOT009', 'Kuakata Beach', 'Barisal', 'Patuakhali', 'Kuakata', 'Beautiful beach where you can see both sunrise and sunset, unique in Bangladesh', 0.00, 4.6, 6500, 'September - April', '6:00 AM - 7:00 PM'),
+('SPOT010', 'Bagerhat Mosque City', 'Khulna', 'Bagerhat', 'Bagerhat Sadar', 'UNESCO World Heritage Site with 60 Dome Mosque and ancient Islamic architecture', 100.00, 4.8, 3500, 'October - March', '9:00 AM - 5:00 PM'),
+('SPOT011', 'Paharpur Buddhist Monastery', 'Rajshahi', 'Naogaon', 'Paharpur', 'Ancient Buddhist temple complex, UNESCO World Heritage Site with historical significance', 100.00, 4.7, 2500, 'Year-round', '9:00 AM - 5:00 PM'),
+('SPOT012', 'Srimangal Tea Estate', 'Sylhet', 'Moulvibazar', 'Srimangal', 'Famous tea gardens with wildlife sanctuary and Lawachara National Park nearby', 0.00, 4.7, 9000, 'January - April', '8:00 AM - 6:00 PM'),
+('SPOT013', 'Kaptai Lake', 'Chittagong', 'Rangamati', 'Rangamati Sadar', 'Largest artificial lake in Bangladesh surrounded by picturesque hills and forests', 0.00, 4.6, 5500, 'October - March', '8:00 AM - 5:00 PM'),
+('SPOT014', 'Bangladesh National Museum', 'Dhaka', 'Dhaka', 'Shahbag, Dhaka', 'Museum with historical artifacts spanning prehistoric to modern times', 100.00, 4.5, 10000, 'Year-round', '10:00 AM - 5:00 PM'),
+('SPOT015', 'Star Mosque', 'Dhaka', 'Dhaka', 'Old Dhaka', 'Beautiful mosque with intricate star-patterned interior design and traditional architecture', 0.00, 4.4, 6000, 'Year-round', '24 hours'),
+('SPOT016', 'Sonargaon', 'Dhaka', 'Sonargaon', 'Sonargaon Sadar', 'Old capital of Bengal with folk museum, Panam City and historical monuments', 100.00, 4.5, 4000, 'October - March', '9:00 AM - 5:00 PM'),
+('SPOT017', 'Jaflong Stone Area', 'Sylhet', 'Sylhet', 'Jaflong', 'Scenic area with stone collection activities, clear river and border views', 0.00, 4.5, 5500, 'January - April', '8:00 AM - 6:00 PM'),
+('SPOT018', 'Chittagong War Cemetery', 'Chittagong', 'Chittagong', 'Chittagong Sadar', 'WWII cemetery with historical graves and significant war history', 0.00, 4.3, 2000, 'Year-round', '9:00 AM - 5:00 PM'),
+('SPOT019', 'Tangail Textile Center', 'Dhaka', 'Tangail', 'Tangail Sadar', 'Famous for traditional saris, handlooms and textile production centers', 0.00, 4.5, 3500, 'Year-round', '9:00 AM - 5:00 PM'),
+('SPOT020', 'Ratargul Swamp Forest', 'Sylhet', 'Sylhet', 'Golapganj', 'Unique freshwater swamp forest with boat tours through pristine nature', 0.00, 4.7, 4000, 'August - December', '8:00 AM - 5:00 PM');
+
+INSERT INTO weather (division, temperature, weathercondition, humidity, windspeed) VALUES
+('Dhaka', 28.5, 'Clear', 65, 8.5),
+('Chittagong', 29.5, 'Partly Cloudy', 72, 12.3),
+('Khulna', 26.5, 'Clear', 68, 9.2),
+('Rajshahi', 27.0, 'Sunny', 62, 7.8),
+('Barisal', 28.0, 'Humid', 70, 10.5),
+('Sylhet', 24.5, 'Rainy', 78, 6.2),
+('Rangpur', 25.5, 'Clear', 60, 6.5),
+('Mymensingh', 27.0, 'Partly Cloudy', 68, 8.0);
+
+INSERT INTO foodmenu
+(menuid, hotelid, foodname, foodcategory, foodprice, fooddescription, isavailable, cuisinetype, isvegetarian)
+VALUES
+('FOOD001', 'HTL001', 'Grilled Pomfret Fish', 'Seafood', 550.00, 'Fresh local pomfret grilled with lemon butter and spices', TRUE, 'Bangladeshi', FALSE),
+('FOOD002', 'HTL001', 'Tiger Prawn Curry', 'Seafood', 650.00, 'Large tiger prawns in rich coconut and spice gravy with rice', TRUE, 'Bangladeshi', FALSE),
+('FOOD003', 'HTL001', 'Biryani with Meat', 'Main Course', 400.00, 'Fragrant basmati rice with tender meat and aromatic spices', TRUE, 'Bangladeshi', FALSE),
+('FOOD004', 'HTL001', 'Vegetable Samosa', 'Appetizer', 150.00, 'Crispy pastry with potato and pea filling, served with chutney', TRUE, 'Bangladeshi', TRUE),
+('FOOD005', 'HTL002', 'Crab Masala Curry', 'Seafood', 700.00, 'Fresh crab in mustard and coconut sauce with rice', TRUE, 'Bangladeshi', FALSE),
+('FOOD006', 'HTL002', 'Hilsa Fish Fry', 'Seafood', 550.00, 'National fish lightly spiced and deep fried to crispy perfection', TRUE, 'Bangladeshi', FALSE),
+('FOOD007', 'HTL003', 'Tandoori Chicken', 'Main Course', 500.00, 'Marinated chicken cooked in clay oven with traditional spices', TRUE, 'Indian', FALSE),
+('FOOD008', 'HTL003', 'Paneer Tikka', 'Appetizer', 400.00, 'Grilled cottage cheese with bell peppers and spiced yogurt', TRUE, 'Indian', TRUE),
+('FOOD009', 'HTL003', 'Butter Chicken', 'Main Course', 480.00, 'Tender chicken in creamy tomato sauce with fresh cream', TRUE, 'Indian', FALSE),
+('FOOD010', 'HTL004', 'Mud Crab Roast', 'Seafood', 850.00, 'Large mud crab roasted with garlic and spices', TRUE, 'Bangladeshi', FALSE),
+('FOOD011', 'HTL004', 'Vegetable Bhaji', 'Vegetable', 250.00, 'Mixed seasonal vegetables in light spice gravy', TRUE, 'Bangladeshi', TRUE),
+('FOOD012', 'HTL005', 'Beef Roast', 'Main Course', 550.00, 'Slow-cooked beef with traditional spices and herbs', TRUE, 'Bangladeshi', FALSE),
+('FOOD013', 'HTL005', 'Dal Bhat', 'Main Course', 200.00, 'Traditional lentil rice with light curry and vegetables', TRUE, 'Bangladeshi', TRUE),
+('FOOD014', 'HTL006', 'Sylhet Tea with Snacks', 'Beverage', 150.00, 'Famous Sylhet tea with traditional pastries and biscuits', TRUE, 'Bangladeshi', TRUE),
+('FOOD015', 'HTL006', 'Vegetable Biryani', 'Main Course', 350.00, 'Fragrant rice with mixed vegetables and spices', TRUE, 'Bangladeshi', TRUE),
+('FOOD016', 'HTL007', 'Chicken Curry', 'Main Course', 380.00, 'Tender chicken in aromatic spiced gravy with rice', TRUE, 'Bangladeshi', FALSE),
+('FOOD017', 'HTL008', 'Fish Curry', 'Main Course', 420.00, 'Fresh water fish in mustard or coconut spiced sauce', TRUE, 'Bangladeshi', FALSE),
+('FOOD018', 'HTL009', 'Shrimp Paste Rice', 'Main Course', 450.00, 'Rice cooked with dried shrimp paste and fresh herbs', TRUE, 'Bangladeshi', FALSE),
+('FOOD019', 'HTL010', 'Hilsa Special Preparation', 'Seafood', 600.00, 'National fish prepared in traditional Bengali style with mustard seeds', TRUE, 'Bangladeshi', FALSE),
+('FOOD020', 'HTL001', 'Mango Lassi', 'Beverage', 120.00, 'Fresh mango yogurt drink with spices', TRUE, 'Bangladeshi', TRUE),
+('FOOD021', 'HTL003', 'Gulab Jamun', 'Dessert', 200.00, 'Sweet milk balls in sugar syrup, Indian traditional dessert', TRUE, 'Indian', TRUE),
+('FOOD022', 'HTL005', 'Kheer', 'Dessert', 180.00, 'Rice pudding with condensed milk, nuts and cardamom', TRUE, 'Indian', TRUE),
+('FOOD023', 'HTL006', 'Papayas with Honey', 'Dessert', 150.00, 'Fresh local papaya with honey and lime juice', TRUE, 'Bangladeshi', TRUE),
+('FOOD024', 'HTL010', 'Sweetened Rice Cake', 'Dessert', 120.00, 'Traditional Bengali rice cake with jaggery and coconut', TRUE, 'Bangladeshi', TRUE);
