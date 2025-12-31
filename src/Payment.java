@@ -5,16 +5,14 @@ import java.sql.SQLException;
 
 public class Payment {
 
-    public static final String STATUS_PENDING = "PENDING";
+    // Only 2 statuses
     public static final String STATUS_COMPLETED = "COMPLETED";
-    public static final String STATUS_FAILED = "FAILED";
-    public static final String STATUS_REFUNDED = "REFUNDED";
-    public static final String STATUSREFUNDED = null;
+    public static final String STATUS_CANCELLED = "CANCELLED";
 
     private String paymentId;
     private double amount;
     private String paymentMethod;
-    private String paymentStatus = STATUS_PENDING;
+    private String paymentStatus = STATUS_CANCELLED;
     private String transactionId;
     private String description;
 
@@ -40,20 +38,31 @@ public class Payment {
 
     public boolean createPayment(Connection conn) {
         if (conn == null) return false;
+        if (amount <= 0) return false;
 
         try {
-            if (paymentId == null || paymentId.trim().isEmpty()) {
+            if (isBlank(paymentId)) {
                 paymentId = IdGenerator.uniqueNumericId(conn, "payment", "paymentid", 12, 60);
             }
 
-            if (paymentStatus == null || paymentStatus.trim().isEmpty()) paymentStatus = STATUS_PENDING;
+            if (isBlank(paymentStatus)) paymentStatus = STATUS_CANCELLED;
+            paymentStatus = paymentStatus.trim().toUpperCase();
 
-            // payment.transactionid is UNIQUE in DB (per your schema intent)
-            if (transactionId == null || transactionId.trim().isEmpty()) {
-                transactionId = "TXN" + System.currentTimeMillis() + "-" + paymentId.substring(Math.max(0, paymentId.length() - 4));
+            if (!isAllowedStatus(paymentStatus)) {
+                System.out.println("Invalid payment status: " + paymentStatus);
+                return false;
             }
 
-            String sql = "INSERT INTO payment (paymentid, amount, paymentmethod, paymentstatus, transactionid, description) " +
+            if (isBlank(paymentMethod)) paymentMethod = "CASH";
+            paymentMethod = paymentMethod.trim();
+
+            if (isBlank(transactionId)) {
+                transactionId = "TXN" + System.currentTimeMillis() + "-" +
+                        paymentId.substring(Math.max(0, paymentId.length() - 4));
+            }
+
+            String sql =
+                    "INSERT INTO payment (paymentid, amount, paymentmethod, paymentstatus, transactionid, description) " +
                     "VALUES (?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -74,33 +83,39 @@ public class Payment {
 
     public boolean updatePaymentStatus(Connection conn, String newStatus) {
         if (conn == null) return false;
-        if (paymentId == null || paymentId.trim().isEmpty()) return false;
-        if (newStatus == null || newStatus.trim().isEmpty()) return false;
+        if (isBlank(paymentId)) return false;
+        if (isBlank(newStatus)) return false;
+
+        String status = newStatus.trim().toUpperCase();
+        if (!isAllowedStatus(status)) {
+            System.out.println("Invalid payment status: " + status);
+            return false;
+        }
 
         String sql = "UPDATE payment SET paymentstatus = ? WHERE paymentid = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newStatus.trim());
-            ps.setString(2, paymentId);
-
+            ps.setString(1, status);
+            ps.setString(2, paymentId.trim());
             boolean ok = ps.executeUpdate() > 0;
-            if (ok) paymentStatus = newStatus.trim();
+            if (ok) paymentStatus = status;
             return ok;
-
         } catch (SQLException e) {
             System.out.println("Payment status update failed: " + e.getMessage());
             return false;
         }
     }
 
-    /** Sets COMPLETED if paidAmount >= totalAmount else FAILED. */
-    public boolean markCompletedOrFailed(Connection conn, double totalAmount, double paidAmount) {
-        if (paidAmount >= totalAmount) return updatePaymentStatus(conn, STATUS_COMPLETED);
-        return updatePaymentStatus(conn, STATUS_FAILED);
+    public boolean markCompleted(Connection conn) {
+        return updatePaymentStatus(conn, STATUS_COMPLETED);
+    }
+
+    public boolean cancel(Connection conn) {
+        return updatePaymentStatus(conn, STATUS_CANCELLED);
     }
 
     public static String getPaymentStatusById(Connection conn, String paymentId) {
         if (conn == null) return null;
-        if (paymentId == null || paymentId.trim().isEmpty()) return null;
+        if (isBlank(paymentId)) return null;
 
         String sql = "SELECT paymentstatus FROM payment WHERE paymentid = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -111,18 +126,14 @@ public class Payment {
         } catch (SQLException e) {
             System.out.println("Failed to fetch payment status: " + e.getMessage());
         }
-
         return null;
     }
 
-    @Override
-    public String toString() {
-        return "Payment{" +
-                "paymentId='" + paymentId + '\'' +
-                ", amount=" + amount +
-                ", paymentMethod='" + paymentMethod + '\'' +
-                ", paymentStatus='" + paymentStatus + '\'' +
-                ", transactionId='" + transactionId + '\'' +
-                '}';
+    private static boolean isAllowedStatus(String s) {
+        return STATUS_COMPLETED.equals(s) || STATUS_CANCELLED.equals(s);
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 }

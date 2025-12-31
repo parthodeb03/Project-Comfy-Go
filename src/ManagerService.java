@@ -13,21 +13,45 @@ public class ManagerService {
         this.conn = conn;
     }
 
+    // Backward-compatible: your ComfyGo currently calls this signature
     public boolean addHotel(String managerId, String hotelName, String location, double pricePerNight,
                             int totalRooms, String roomCategory, String features) {
+        return addHotel(managerId, hotelName, location, pricePerNight, totalRooms, roomCategory, features, "");
+    }
+
+    // New: supports hoteldescription
+    public boolean addHotel(String managerId, String hotelName, String location, double pricePerNight,
+                            int totalRooms, String roomCategory, String features, String description) {
 
         if (conn == null) return false;
         if (managerId == null || managerId.trim().isEmpty()) return false;
         if (hotelName == null || hotelName.trim().isEmpty()) return false;
+
         if (location == null) location = "";
+        if (features == null) features = "";
+        if (roomCategory == null) roomCategory = "";
+        if (description == null) description = "";
+
+        if (pricePerNight <= 0) {
+            System.out.println("Price per night must be > 0!");
+            return false;
+        }
+
         if (totalRooms < 0) totalRooms = 0;
 
         try {
+            // If you added UNIQUE(hotels.managerid), this prevents duplicate insert errors
+            if (hasHotelForManager(managerId)) {
+                System.out.println("You already have a hotel added. One manager can add only one hotel.");
+                return false;
+            }
+
             String hotelId = IdGenerator.uniqueNumericId(conn, "hotels", "hotelid", 12, 60);
 
             String sql = "INSERT INTO hotels " +
-                    "(hotelid, hotelname, hotellocation, hotelpricepernight, totalrooms, roomcategory, hotelfeatures, roomavailability, managerid) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "(hotelid, hotelname, hotellocation, hotelpricepernight, totalrooms, roomcategory, " +
+                    " hotelfeatures, hoteldescription, roomavailability, managerid) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, hotelId);
@@ -35,11 +59,11 @@ public class ManagerService {
                 ps.setString(3, location.trim());
                 ps.setDouble(4, pricePerNight);
                 ps.setInt(5, totalRooms);
-                ps.setString(6, roomCategory);
-                ps.setString(7, features);
-                ps.setInt(8, totalRooms); // initially all rooms available
-                ps.setString(9, managerId.trim());
-
+                ps.setString(6, roomCategory.trim());
+                ps.setString(7, features.trim());
+                ps.setString(8, description.trim());
+                ps.setInt(9, totalRooms); // initially all rooms available
+                ps.setString(10, managerId.trim());
                 ps.executeUpdate();
             }
 
@@ -74,6 +98,7 @@ public class ManagerService {
                 h.setRoomCategory(rs.getString("roomcategory"));
                 h.setTotalRooms(rs.getInt("totalrooms"));
                 h.setFeatures(rs.getString("hotelfeatures"));
+                h.setDescription(rs.getString("hoteldescription")); // NEW
                 h.setManagerId(rs.getString("managerid"));
                 return h;
             }
@@ -89,14 +114,17 @@ public class ManagerService {
         if (conn == null) return bookings;
         if (hotelId == null || hotelId.trim().isEmpty()) return bookings;
 
+        // booking table stores hotelname + hotellocation, so filter using both
         String sql =
-                "SELECT bookingid, hotelname, checkindate, checkoutdate, numberofrooms, bookingstatus, totalprice " +
+                "SELECT bookingid, hotelname, hotellocation, checkindate, checkoutdate, numberofrooms, bookingstatus, totalprice, paymentid " +
                 "FROM booking " +
                 "WHERE hotelname = (SELECT hotelname FROM hotels WHERE hotelid = ? LIMIT 1) " +
+                "AND hotellocation = (SELECT hotellocation FROM hotels WHERE hotelid = ? LIMIT 1) " +
                 "ORDER BY checkindate DESC";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, hotelId.trim());
+            ps.setString(2, hotelId.trim());
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -105,7 +133,8 @@ public class ManagerService {
                             rs.getDate("checkindate") + " to " + rs.getDate("checkoutdate") + " | " +
                             rs.getInt("numberofrooms") + " rooms | " +
                             rs.getString("bookingstatus") + " | BDT " +
-                            rs.getDouble("totalprice");
+                            rs.getDouble("totalprice") + " | PayID: " +
+                            rs.getString("paymentid");
 
                     bookings.add(row);
                 }
@@ -118,36 +147,15 @@ public class ManagerService {
         return bookings;
     }
 
-    public boolean confirmBooking(String bookingId) {
-        return updateBookingStatus(bookingId, Booking.STATUS_CONFIRMED);
-    }
-
-    public boolean cancelBooking(String bookingId) {
-        return updateBookingStatus(bookingId, Booking.STATUS_CANCELLED);
-    }
-
-    private boolean updateBookingStatus(String bookingId, String status) {
+    // NOTE: For cancellations, use HotelService.cancelHotelBookingForManager(managerId, bookingId)
+    // because it also sets payment -> CANCELLED and restores rooms (your new rules).
+    public boolean cancelBookingForManager(String managerId, String bookingId) {
         if (conn == null) return false;
+        if (managerId == null || managerId.trim().isEmpty()) return false;
         if (bookingId == null || bookingId.trim().isEmpty()) return false;
 
-        String sql = "UPDATE booking SET bookingstatus = ? WHERE bookingid = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status);
-            ps.setString(2, bookingId.trim());
-
-            int rows = ps.executeUpdate();
-            if (rows > 0) {
-                System.out.println("Booking updated: " + status);
-                return true;
-            }
-
-            System.out.println("Booking not found!");
-            return false;
-
-        } catch (SQLException e) {
-            System.out.println("Failed to update booking: " + e.getMessage());
-            return false;
-        }
+        HotelService hs = new HotelService(conn);
+        return hs.cancelHotelBookingForManager(managerId.trim(), bookingId.trim());
     }
 
     public void displayHotelStats(String hotelId) {
@@ -156,8 +164,8 @@ public class ManagerService {
 
         String sql =
                 "SELECT " +
-                " (SELECT COUNT(*) FROM booking WHERE hotelname = h.hotelname) AS total_bookings, " +
-                " (SELECT COUNT(*) FROM booking WHERE hotelname = h.hotelname AND bookingstatus = 'CONFIRMED') AS confirmed_bookings, " +
+                " (SELECT COUNT(*) FROM booking WHERE hotelname = h.hotelname AND hotellocation = h.hotellocation) AS total_bookings, " +
+                " (SELECT COUNT(*) FROM booking WHERE hotelname = h.hotelname AND hotellocation = h.hotellocation AND bookingstatus = 'CONFIRMED') AS confirmed_bookings, " +
                 " (SELECT AVG(rating) FROM ratings WHERE ratingtype = 'HOTEL' AND targetname = h.hotelname) AS avg_rating, " +
                 " h.roomavailability, h.totalrooms " +
                 "FROM hotels h WHERE h.hotelid = ?";
@@ -186,19 +194,46 @@ public class ManagerService {
     public boolean updateHotelFeatures(String hotelId, String newFeatures) {
         if (conn == null) return false;
         if (hotelId == null || hotelId.trim().isEmpty()) return false;
+        if (newFeatures == null) newFeatures = "";
 
         String sql = "UPDATE hotels SET hotelfeatures = ? WHERE hotelid = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newFeatures);
+            ps.setString(1, newFeatures.trim());
             ps.setString(2, hotelId.trim());
             boolean ok = ps.executeUpdate() > 0;
-
             if (ok) System.out.println("Hotel features updated!");
             return ok;
-
         } catch (SQLException e) {
             System.out.println("Update failed: " + e.getMessage());
             return false;
+        }
+    }
+
+    public boolean updateHotelDescription(String hotelId, String newDescription) {
+        if (conn == null) return false;
+        if (hotelId == null || hotelId.trim().isEmpty()) return false;
+        if (newDescription == null) newDescription = "";
+
+        String sql = "UPDATE hotels SET hoteldescription = ? WHERE hotelid = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newDescription.trim());
+            ps.setString(2, hotelId.trim());
+            boolean ok = ps.executeUpdate() > 0;
+            if (ok) System.out.println("Hotel description updated!");
+            return ok;
+        } catch (SQLException e) {
+            System.out.println("Update failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean hasHotelForManager(String managerId) throws SQLException {
+        String sql = "SELECT 1 FROM hotels WHERE managerid = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, managerId.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 }

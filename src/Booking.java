@@ -13,21 +13,25 @@ public class Booking {
     public static final String STATUS_COMPLETED = "COMPLETED";
     public static final String STATUS_FAILED = "FAILED";
     public static final String STATUS_CANCELLED = "CANCELLED";
-    public static final String STATUSCANCELLED = null;
-    public static final String STATUSCONFIRMED = null;
 
     private String bookingId;
+
     private String userId;
-    private String checkInDate;   // YYYY-MM-DD
-    private String checkOutDate;  // YYYY-MM-DD
+
+    // YYYY-MM-DD (nullable for non-hotel use, but your hotel flow should set them)
+    private String checkInDate;
+    private String checkOutDate;
+
     private double totalPrice;
+
     private String bookingStatus = STATUS_PENDING;
+
     private String paymentId;
 
     private String hotelName;
     private String hotelLocation;
 
-    // kept for future/optional use
+    // Optional fields (kept for future use)
     private String guideName;
     private String guideId;
 
@@ -71,41 +75,92 @@ public class Booking {
     public int getNumberOfRooms() { return numberOfRooms; }
     public void setNumberOfRooms(int numberOfRooms) { this.numberOfRooms = numberOfRooms; }
 
+    /**
+     * Inserts into `booking` table (hotel booking).
+     * Column set matches comfygo.sql:
+     * booking(bookingid, userid, checkindate, checkoutdate, totalprice, bookingstatus, paymentid,
+     *         hotelname, hotellocation, guidename, guideid, numberofrooms)
+     */
     public boolean createBooking(Connection conn) {
         if (conn == null) return false;
 
+        if (isBlank(userId)) {
+            System.out.println("Booking create failed: userid is required.");
+            return false;
+        }
+
+        if (totalPrice <= 0) {
+            System.out.println("Booking create failed: totalprice must be > 0.");
+            return false;
+        }
+
+        if (isBlank(bookingStatus)) bookingStatus = STATUS_PENDING;
+
+        // If this is a hotel booking (hotelName set), enforce check-in/out
+        boolean isHotelBooking = !isBlank(hotelName) || !isBlank(hotelLocation);
+        if (isHotelBooking) {
+            if (isBlank(checkInDate) || isBlank(checkOutDate)) {
+                System.out.println("Booking create failed: check-in and check-out dates are required for hotel booking.");
+                return false;
+            }
+            try {
+                Date ci = Date.valueOf(checkInDate.trim());
+                Date co = Date.valueOf(checkOutDate.trim());
+                if (!co.after(ci)) {
+                    System.out.println("Booking create failed: check-out date must be after check-in date.");
+                    return false;
+                }
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid date format (use YYYY-MM-DD).");
+                return false;
+            }
+        }
+
         try {
-            if (bookingId == null || bookingId.trim().isEmpty()) {
+            if (isBlank(bookingId)) {
                 bookingId = IdGenerator.uniqueNumericId(conn, "booking", "bookingid", 12, 60);
             }
-            if (bookingStatus == null || bookingStatus.trim().isEmpty()) bookingStatus = STATUS_PENDING;
 
             String sql =
                     "INSERT INTO booking " +
                     "(bookingid, userid, checkindate, checkoutdate, totalprice, bookingstatus, paymentid, " +
-                    "hotelname, hotellocation, guidename, guideid, numberofrooms) " +
+                    " hotelname, hotellocation, guidename, guideid, numberofrooms) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, bookingId);
-                ps.setString(2, userId);
-                ps.setDate(3, Date.valueOf(checkInDate));
-                ps.setDate(4, Date.valueOf(checkOutDate));
+                ps.setString(2, userId.trim());
+
+                // Dates are nullable in schema, so support null safely
+                if (isBlank(checkInDate)) ps.setNull(3, java.sql.Types.DATE);
+                else ps.setDate(3, Date.valueOf(checkInDate.trim()));
+
+                if (isBlank(checkOutDate)) ps.setNull(4, java.sql.Types.DATE);
+                else ps.setDate(4, Date.valueOf(checkOutDate.trim()));
+
                 ps.setDouble(5, totalPrice);
-                ps.setString(6, bookingStatus);
-                ps.setString(7, paymentId);
-                ps.setString(8, hotelName);
-                ps.setString(9, hotelLocation);
-                ps.setString(10, guideName);
-                ps.setString(11, guideId);
-                ps.setInt(12, numberOfRooms);
+                ps.setString(6, bookingStatus.trim().toUpperCase());
+
+                if (isBlank(paymentId)) ps.setNull(7, java.sql.Types.VARCHAR);
+                else ps.setString(7, paymentId.trim());
+
+                if (isBlank(hotelName)) ps.setNull(8, java.sql.Types.VARCHAR);
+                else ps.setString(8, hotelName.trim());
+
+                if (isBlank(hotelLocation)) ps.setNull(9, java.sql.Types.VARCHAR);
+                else ps.setString(9, hotelLocation.trim());
+
+                if (isBlank(guideName)) ps.setNull(10, java.sql.Types.VARCHAR);
+                else ps.setString(10, guideName.trim());
+
+                if (isBlank(guideId)) ps.setNull(11, java.sql.Types.VARCHAR);
+                else ps.setString(11, guideId.trim());
+
+                ps.setInt(12, Math.max(0, numberOfRooms));
 
                 return ps.executeUpdate() > 0;
             }
 
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid date format (use YYYY-MM-DD).");
-            return false;
         } catch (SQLException e) {
             System.out.println("Booking create failed: " + e.getMessage());
             return false;
@@ -114,18 +169,22 @@ public class Booking {
 
     public boolean updateBookingStatus(Connection conn, String newStatus) {
         if (conn == null) return false;
-        if (bookingId == null || bookingId.trim().isEmpty()) return false;
-        if (newStatus == null || newStatus.trim().isEmpty()) return false;
+        if (isBlank(bookingId)) return false;
+        if (isBlank(newStatus)) return false;
+
+        String status = newStatus.trim().toUpperCase();
+        if (!isAllowedStatus(status)) {
+            System.out.println("Invalid booking status: " + status);
+            return false;
+        }
 
         String sql = "UPDATE booking SET bookingstatus = ? WHERE bookingid = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newStatus.trim());
-            ps.setString(2, bookingId);
-
+            ps.setString(1, status);
+            ps.setString(2, bookingId.trim());
             boolean ok = ps.executeUpdate() > 0;
-            if (ok) bookingStatus = newStatus.trim();
+            if (ok) bookingStatus = status;
             return ok;
-
         } catch (SQLException e) {
             System.out.println("Booking status update failed: " + e.getMessage());
             return false;
@@ -135,7 +194,7 @@ public class Booking {
     public static List<Booking> getBookingsByUser(String userId, Connection conn) {
         List<Booking> list = new ArrayList<>();
         if (conn == null) return list;
-        if (userId == null || userId.trim().isEmpty()) return list;
+        if (isBlank(userId)) return list;
 
         String sql =
                 "SELECT bookingid, userid, checkindate, checkoutdate, totalprice, bookingstatus, paymentid, " +
@@ -144,36 +203,71 @@ public class Booking {
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, userId.trim());
-
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Booking b = new Booking();
-                    b.bookingId = rs.getString("bookingid");
-                    b.userId = rs.getString("userid");
-
-                    Date ci = rs.getDate("checkindate");
-                    Date co = rs.getDate("checkoutdate");
-                    b.checkInDate = (ci == null) ? null : ci.toString();
-                    b.checkOutDate = (co == null) ? null : co.toString();
-
-                    b.totalPrice = rs.getDouble("totalprice");
-                    b.bookingStatus = rs.getString("bookingstatus");
-                    b.paymentId = rs.getString("paymentid");
-                    b.hotelName = rs.getString("hotelname");
-                    b.hotelLocation = rs.getString("hotellocation");
-                    b.guideName = rs.getString("guidename");
-                    b.guideId = rs.getString("guideid");
-                    b.numberOfRooms = rs.getInt("numberofrooms");
-
-                    list.add(b);
-                }
+                while (rs.next()) list.add(map(rs));
             }
-
         } catch (SQLException e) {
             System.out.println("Fetch bookings failed: " + e.getMessage());
         }
 
         return list;
+    }
+
+    public static Booking getBookingById(String bookingId, Connection conn) {
+        if (conn == null) return null;
+        if (isBlank(bookingId)) return null;
+
+        String sql =
+                "SELECT bookingid, userid, checkindate, checkoutdate, totalprice, bookingstatus, paymentid, " +
+                "hotelname, hotellocation, guidename, guideid, numberofrooms " +
+                "FROM booking WHERE bookingid = ? LIMIT 1";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, bookingId.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return map(rs);
+            }
+        } catch (SQLException e) {
+            System.out.println("Fetch booking failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    private static Booking map(ResultSet rs) throws SQLException {
+        Booking b = new Booking();
+        b.bookingId = rs.getString("bookingid");
+        b.userId = rs.getString("userid");
+
+        Date ci = rs.getDate("checkindate");
+        Date co = rs.getDate("checkoutdate");
+        b.checkInDate = (ci == null) ? null : ci.toString();
+        b.checkOutDate = (co == null) ? null : co.toString();
+
+        b.totalPrice = rs.getDouble("totalprice");
+        b.bookingStatus = rs.getString("bookingstatus");
+        b.paymentId = rs.getString("paymentid");
+
+        b.hotelName = rs.getString("hotelname");
+        b.hotelLocation = rs.getString("hotellocation");
+
+        b.guideName = rs.getString("guidename");
+        b.guideId = rs.getString("guideid");
+
+        b.numberOfRooms = rs.getInt("numberofrooms");
+        return b;
+    }
+
+    private static boolean isAllowedStatus(String s) {
+        return STATUS_PENDING.equals(s) ||
+               STATUS_CONFIRMED.equals(s) ||
+               STATUS_COMPLETED.equals(s) ||
+               STATUS_FAILED.equals(s) ||
+               STATUS_CANCELLED.equals(s);
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 
     @Override

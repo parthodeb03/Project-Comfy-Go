@@ -10,12 +10,12 @@ public class ManagerActivities {
 
     public boolean confirmBooking(Booking booking) {
         if (booking == null) return false;
-        return booking.updateBookingStatus(conn, Booking.STATUSCONFIRMED);
+        return booking.updateBookingStatus(conn, Booking.STATUS_CONFIRMED);
     }
 
     public boolean cancelBooking(Booking booking) {
         if (booking == null) return false;
-        return booking.updateBookingStatus(conn, Booking.STATUSCANCELLED);
+        return booking.updateBookingStatus(conn, Booking.STATUS_CANCELLED);
     }
 
     public boolean updatePaymentStatus(Payment payment, String newStatus) {
@@ -25,7 +25,7 @@ public class ManagerActivities {
 
     public boolean refundPayment(Payment payment) {
         if (payment == null) return false;
-        return payment.updatePaymentStatus(conn, Payment.STATUSREFUNDED);
+        return payment.updatePaymentStatus(conn, Payment.STATUS_CANCELLED);
     }
 
     public boolean updateHotelAvailability(Hotel hotel, int newAvailability) {

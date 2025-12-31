@@ -8,7 +8,7 @@ import java.sql.SQLException;
  *
  * Expected columns:
  * hotels(hotelid, hotelname, hotellocation, hotelpricepernight, hotelrating,
- *       roomavailability, roomcategory, totalrooms, hotelfeatures, managerid, ...)
+ * roomavailability, roomcategory, totalrooms, hotelfeatures, hoteldescription, managerid, ...)
  */
 public class Hotel {
 
@@ -21,6 +21,10 @@ public class Hotel {
     private String roomCategory;
     private int totalRooms;
     private String features;
+
+    // NEW
+    private String description;
+
     private String managerId;
 
     public Hotel() {}
@@ -52,11 +56,13 @@ public class Hotel {
     public String getFeatures() { return features; }
     public void setFeatures(String features) { this.features = features; }
 
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
     public String getManagerId() { return managerId; }
     public void setManagerId(String managerId) { this.managerId = managerId; }
 
     // -------------------- Optional DB helpers --------------------
-
     public static Hotel getHotelById(String hotelId, Connection conn) {
         if (conn == null) return null;
         if (hotelId == null || hotelId.trim().isEmpty()) return null;
@@ -64,7 +70,6 @@ public class Hotel {
         String sql = "SELECT * FROM hotels WHERE hotelid = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, hotelId.trim());
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
 
@@ -78,10 +83,10 @@ public class Hotel {
                 h.roomCategory = rs.getString("roomcategory");
                 h.totalRooms = rs.getInt("totalrooms");
                 h.features = rs.getString("hotelfeatures");
+                h.description = rs.getString("hoteldescription");
                 h.managerId = rs.getString("managerid");
                 return h;
             }
-
         } catch (SQLException e) {
             System.out.println("Error fetching hotel: " + e.getMessage());
             return null;
@@ -96,11 +101,9 @@ public class Hotel {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, newAvailability);
             ps.setString(2, hotelId);
-
             boolean ok = ps.executeUpdate() > 0;
             if (ok) this.roomAvailability = newAvailability;
             return ok;
-
         } catch (SQLException e) {
             System.out.println("Error updating room availability: " + e.getMessage());
             return false;
@@ -115,11 +118,9 @@ public class Hotel {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDouble(1, newPrice);
             ps.setString(2, hotelId);
-
             boolean ok = ps.executeUpdate() > 0;
             if (ok) this.pricePerNight = newPrice;
             return ok;
-
         } catch (SQLException e) {
             System.out.println("Error updating price: " + e.getMessage());
             return false;

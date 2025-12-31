@@ -7,8 +7,8 @@ import java.sql.SQLException;
  * Manager Entity - Represents a Hotel Manager.
  *
  * Expected table columns (used by AuthService):
- * managers(managerid, managername, manageremail, managerphone, managerpassword,
- *          hotelname, hotelnid, registrationnumber, status, ...)
+ * managers(managerid, managername, manageremail, managerphone, managernid, managerpassword,
+ * hotelname, hotelnid, registrationnumber, status, ...)
  */
 public class Manager {
 
@@ -16,6 +16,10 @@ public class Manager {
     private String managerName;
     private String managerEmail;
     private String managerPhone;
+
+    // NEW
+    private String managerNid;
+
     private String managerPassword;
     private String hotelName;
     private String hotelNID;
@@ -43,6 +47,9 @@ public class Manager {
     public String getManagerPhone() { return managerPhone; }
     public void setManagerPhone(String managerPhone) { this.managerPhone = managerPhone; }
 
+    public String getManagerNid() { return managerNid; }
+    public void setManagerNid(String managerNid) { this.managerNid = managerNid; }
+
     public String getManagerPassword() { return managerPassword; }
     public void setManagerPassword(String managerPassword) { this.managerPassword = managerPassword; }
 
@@ -62,7 +69,6 @@ public class Manager {
     public void setStatus(String status) { this.status = status; }
 
     // -------------------- Optional DB helpers --------------------
-
     public boolean registerManager(Connection conn) {
         if (conn == null) return false;
 
@@ -73,19 +79,21 @@ public class Manager {
 
             String sql =
                     "INSERT INTO managers " +
-                    "(managerid, managername, manageremail, managerphone, managerpassword, hotelname, hotelnid, registrationnumber, status) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "(managerid, managername, manageremail, managerphone, managernid, managerpassword, " +
+                    " hotelname, hotelnid, registrationnumber, status) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, managerId);
                 ps.setString(2, managerName);
                 ps.setString(3, managerEmail);
                 ps.setString(4, managerPhone);
-                ps.setString(5, managerPassword);
-                ps.setString(6, hotelName);
-                ps.setString(7, hotelNID);
-                ps.setString(8, registrationNumber);
-                ps.setString(9, status);
+                ps.setString(5, managerNid);
+                ps.setString(6, managerPassword);
+                ps.setString(7, hotelName);
+                ps.setString(8, hotelNID);
+                ps.setString(9, registrationNumber);
+                ps.setString(10, status);
                 return ps.executeUpdate() > 0;
             }
 
@@ -100,12 +108,11 @@ public class Manager {
         if (email == null || email.trim().isEmpty()) return null;
 
         String sql =
-                "SELECT managerid, managername, manageremail, managerphone, hotelname, status " +
+                "SELECT managerid, managername, manageremail, managerphone, managernid, hotelname, status " +
                 "FROM managers WHERE manageremail = ? LIMIT 1";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email.trim());
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
 
@@ -114,11 +121,11 @@ public class Manager {
                 m.setManagerName(rs.getString("managername"));
                 m.setManagerEmail(rs.getString("manageremail"));
                 m.setManagerPhone(rs.getString("managerphone"));
+                m.setManagerNid(rs.getString("managernid"));
                 m.setHotelName(rs.getString("hotelname"));
                 m.setStatus(rs.getString("status"));
                 return m;
             }
-
         } catch (SQLException e) {
             System.out.println("Error fetching manager: " + e.getMessage());
             return null;

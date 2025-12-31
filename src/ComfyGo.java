@@ -1,12 +1,10 @@
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Scanner;
 
-/**
- * ComfyGo - Tourism Management System (Console Prototype)
- * Main Application with Service-Based Architecture
- */
 public class ComfyGo {
 
     private static Connection conn;
@@ -20,6 +18,7 @@ public class ComfyGo {
     // Services
     private static AuthService authService;
     private static HotelService hotelService;
+    private static ManagerService managerService;
     private static GuideService guideService;
     private static TouristSpotService spotService;
     private static TransportService transportService;
@@ -28,7 +27,6 @@ public class ComfyGo {
     public static void main(String[] args) {
         try {
             conn = Db.getConnection();
-
             if (!Db.testConnection()) {
                 System.out.println("Failed to connect to database!");
                 return;
@@ -36,6 +34,7 @@ public class ComfyGo {
 
             authService = new AuthService(conn);
             hotelService = new HotelService(conn);
+            managerService = new ManagerService(conn);
             guideService = new GuideService(conn);
             spotService = new TouristSpotService(conn);
             transportService = new TransportService(conn);
@@ -54,10 +53,8 @@ public class ComfyGo {
     }
 
     // ===================== MAIN MENU =====================
-
     private static void mainMenu() {
         boolean running = true;
-
         while (running) {
             System.out.println("\n" + "=".repeat(70));
             System.out.println("WELCOME TO COMFYGO - TOURISM MANAGEMENT SYSTEM");
@@ -83,6 +80,7 @@ public class ComfyGo {
                     case "6" -> running = false;
                     default -> System.out.println("Invalid choice!");
                 }
+
             } else {
                 switch (currentUserRole) {
                     case "TOURIST" -> touristMenu();
@@ -98,7 +96,6 @@ public class ComfyGo {
     }
 
     // ===================== REGISTRATION =====================
-
     private static void registrationMenu() {
         System.out.println("\n" + "=".repeat(70));
         System.out.println("REGISTRATION");
@@ -200,6 +197,9 @@ public class ComfyGo {
         System.out.print("Phone Number: ");
         String phone = sc.nextLine().trim();
 
+        System.out.print("Manager NID: ");
+        String managerNid = sc.nextLine().trim();
+
         System.out.print("Hotel Name: ");
         String hotelName = sc.nextLine().trim();
 
@@ -212,11 +212,10 @@ public class ComfyGo {
         System.out.print("Password: ");
         String password = sc.nextLine().trim();
 
-        authService.registerManager(name, email, phone, hotelName, hotelNid, regNumber, password);
+        authService.registerManager(name, email, phone, managerNid, hotelName, hotelNid, regNumber, password);
     }
 
     // ===================== LOGIN =====================
-
     private static void loginMenu() {
         System.out.println("\n" + "=".repeat(70));
         System.out.println("LOGIN");
@@ -275,10 +274,8 @@ public class ComfyGo {
     }
 
     // ===================== TOURIST =====================
-
     private static void touristMenu() {
         boolean inMenu = true;
-
         while (inMenu && currentUserId != null) {
             System.out.println("\n" + "=".repeat(70));
             System.out.println("TOURIST MENU - " + (currentUserName == null ? "" : currentUserName.toUpperCase()));
@@ -300,10 +297,7 @@ public class ComfyGo {
                 case "4" -> hireGuide();
                 case "5" -> viewMyBookings();
                 case "6" -> submitRating();
-                case "7" -> {
-                    logout();
-                    inMenu = false;
-                }
+                case "7" -> { logout(); inMenu = false; }
                 default -> System.out.println("Invalid choice!");
             }
         }
@@ -315,18 +309,17 @@ public class ComfyGo {
         System.out.println("=".repeat(70));
 
         List<String> divisions = spotService.getAllDivisions();
-        if (divisions.isEmpty()) {
+        if (divisions == null || divisions.isEmpty()) {
             System.out.println("No divisions available!");
             return;
         }
 
         System.out.println("Available Divisions:");
-        for (int i = 0; i < divisions.size(); i++) {
-            System.out.println((i + 1) + ". " + divisions.get(i));
-        }
+        for (int i = 0; i < divisions.size(); i++) System.out.println((i + 1) + ". " + divisions.get(i));
 
         int choice = readInt("Choose division number (0 to back): ");
         if (choice == 0) return;
+
         if (choice < 1 || choice > divisions.size()) {
             System.out.println("Invalid choice!");
             return;
@@ -339,7 +332,7 @@ public class ComfyGo {
         if (spotChoice == 0) return;
 
         List<TouristSpot> spots = spotService.searchSpotsByDivision(selectedDivision);
-        if (spotChoice < 1 || spotChoice > spots.size()) {
+        if (spots == null || spotChoice < 1 || spotChoice > spots.size()) {
             System.out.println("Invalid spot choice!");
             return;
         }
@@ -359,7 +352,7 @@ public class ComfyGo {
                 ? hotelService.getAllHotels()
                 : hotelService.searchHotelsByLocation(location);
 
-        if (hotels.isEmpty()) {
+        if (hotels == null || hotels.isEmpty()) {
             System.out.println("No hotels found!");
             return;
         }
@@ -379,6 +372,7 @@ public class ComfyGo {
 
         int choice = readInt("Choose hotel number (0 to back): ");
         if (choice == 0) return;
+
         if (choice < 1 || choice > hotels.size()) {
             System.out.println("Invalid choice!");
             return;
@@ -398,17 +392,33 @@ public class ComfyGo {
 
         int numRooms = readInt("Number of rooms: ");
 
-        // Prototype pricing: 1 night
-        double totalPrice = selectedHotel.getPricePerNight() * numRooms;
+        long nights;
+        try {
+            LocalDate ci = LocalDate.parse(checkIn);
+            LocalDate co = LocalDate.parse(checkOut);
+            nights = ChronoUnit.DAYS.between(ci, co);
+        } catch (Exception e) {
+            System.out.println("Invalid date format. Use YYYY-MM-DD.");
+            return;
+        }
 
-        System.out.println("\nPAYMENT (Prototype)");
-        System.out.println("Total to pay: BDT " + totalPrice);
+        if (nights <= 0) {
+            System.out.println("Check-out date must be after check-in date!");
+            return;
+        }
+
+        double totalPrice = selectedHotel.getPricePerNight() * numRooms * nights;
+
+        System.out.println("\nPAYMENT");
+        System.out.println("Nights: " + nights);
+        System.out.println("Total to pay: BDT " + Math.round(totalPrice));
 
         System.out.print("Payment method (Cash/Bkash/Nagad/Card): ");
         String method = sc.nextLine().trim();
         if (method.isEmpty()) method = "Cash";
 
-        double paidAmount = readDouble("Enter paid amount (0 to skip -> FAILED): ");
+        System.out.println("Note: If paid amount < total price, payment will be CANCELLED and booking will not be created.");
+        double paidAmount = readDouble("Enter paid amount: ");
 
         hotelService.bookHotelWithPayment(
                 currentUserId,
@@ -428,7 +438,7 @@ public class ComfyGo {
         System.out.println("=".repeat(70));
 
         List<Hotel> allHotels = hotelService.getAllHotels();
-        if (allHotels.isEmpty()) {
+        if (allHotels == null || allHotels.isEmpty()) {
             System.out.println("No hotels available!");
             return;
         }
@@ -453,25 +463,22 @@ public class ComfyGo {
         System.out.println("MY BOOKINGS (HOTEL + TRANSPORT)");
         System.out.println("=".repeat(70));
 
-        // 1) Hotel bookings
         hotelService.displayUserHotelBookings(currentUserId);
 
-        // 2) Transport bookings
         List<String> tBookings = transportService.getUserTransportBookings(currentUserId);
-
         System.out.println("\n" + "=".repeat(80));
         System.out.println("MY TRANSPORT BOOKINGS");
         System.out.println("=".repeat(80));
 
-        if (tBookings.isEmpty()) {
+        if (tBookings == null || tBookings.isEmpty()) {
             System.out.println("No transport bookings found!");
         } else {
             for (String b : tBookings) System.out.println(b);
         }
-        System.out.println("=".repeat(80));
 
+        System.out.println("=".repeat(80));
         System.out.println("\nCANCEL OPTIONS");
-        System.out.println("1. Cancel a Hotel Booking (Refund if paid)");
+        System.out.println("1. Cancel a Hotel Booking");
         System.out.println("2. Cancel a Transport Ticket");
         System.out.println("3. Back");
         System.out.print("Choose option: ");
@@ -500,7 +507,7 @@ public class ComfyGo {
 
         transportService.displayAvailableRoutes();
 
-        System.out.print("Transport type (Bus/Train/Launch): ");
+        System.out.print("Transport type (Bus/Train/Launch/Air): ");
         String transportType = sc.nextLine().trim();
 
         System.out.print("Departure location: ");
@@ -512,8 +519,8 @@ public class ComfyGo {
         System.out.print("Departure date (YYYY-MM-DD): ");
         String depDate = sc.nextLine().trim();
 
-        System.out.print("Arrival date (YYYY-MM-DD): ");
-        String arrDate = sc.nextLine().trim();
+        System.out.print("Issue date (YYYY-MM-DD): ");
+        String issueDate = sc.nextLine().trim();
 
         int passengers = readInt("Number of passengers: ");
 
@@ -528,8 +535,10 @@ public class ComfyGo {
         System.out.print("Vehicle/Company name: ");
         String company = sc.nextLine().trim();
 
-        transportService.bookTransport(currentUserId, transportType, departure, arrival, depDate, arrDate,
-                passengers, seat, fare, regNo, company);
+        transportService.bookTransport(
+                currentUserId, transportType, departure, arrival,
+                depDate, issueDate, passengers, seat, fare, regNo, company
+        );
     }
 
     private static void hireGuide() {
@@ -538,7 +547,7 @@ public class ComfyGo {
         System.out.println("=".repeat(70));
 
         List<Guide> guides = guideService.getAvailableGuides();
-        if (guides.isEmpty()) {
+        if (guides == null || guides.isEmpty()) {
             System.out.println("No available guides right now!");
             return;
         }
@@ -550,6 +559,7 @@ public class ComfyGo {
 
         int choice = readInt("Enter guide number to hire (0 to back): ");
         if (choice == 0) return;
+
         if (choice < 1 || choice > guides.size()) {
             System.out.println("Invalid choice!");
             return;
@@ -627,19 +637,18 @@ public class ComfyGo {
     }
 
     // ===================== GUIDE =====================
-
     private static void guideMenu() {
         boolean inMenu = true;
-
         while (inMenu && currentUserId != null) {
             System.out.println("\n" + "=".repeat(70));
             System.out.println("GUIDE MENU - " + (currentUserName == null ? "" : currentUserName.toUpperCase()));
             System.out.println("=".repeat(70));
             System.out.println("1. View Profile");
             System.out.println("2. Update Availability");
-            System.out.println("3. View My Bookings (Prototype)");
-            System.out.println("4. View Ratings");
-            System.out.println("5. Logout");
+            System.out.println("3. View My Bookings");
+            System.out.println("4. Manage Booking Status");
+            System.out.println("5. View Ratings");
+            System.out.println("6. Logout");
             System.out.print("Choose option: ");
 
             String choice = sc.nextLine().trim();
@@ -654,69 +663,198 @@ public class ComfyGo {
                     boolean available = sc.nextLine().trim().equalsIgnoreCase("y");
                     guideService.setGuideAvailability(currentUserId, available);
                 }
-                case "3" -> System.out.println("Guide bookings view is not implemented yet in this prototype.");
-                case "4" -> ratingService.displayRatings("GUIDE", currentUserName);
-                case "5" -> {
-                    logout();
-                    inMenu = false;
-                }
+                case "3" -> guideService.displayGuideBookings(currentUserId);
+                case "4" -> manageGuideBookings();
+                case "5" -> ratingService.displayRatings("GUIDE", currentUserName);
+                case "6" -> { logout(); inMenu = false; }
                 default -> System.out.println("Invalid choice!");
             }
+        }
+    }
+
+    private static void manageGuideBookings() {
+        guideService.displayGuideBookings(currentUserId);
+
+        System.out.println("\nGUIDE BOOKING ACTIONS");
+        System.out.println("1. Update Tour Status (PENDING/CONFIRMED/REJECTED/COMPLETED/CANCELLED)");
+        System.out.println("2. Update Payment Status (PENDING/COMPLETED/FAILED/REFUNDED)");
+        System.out.println("3. Back");
+        System.out.print("Choose option: ");
+
+        String choice = sc.nextLine().trim();
+        switch (choice) {
+            case "1" -> {
+                System.out.print("Enter Booking ID: ");
+                String bookingId = sc.nextLine().trim();
+                System.out.print("Enter new tour status: ");
+                String status = sc.nextLine().trim();
+                guideService.updateTourStatusForGuide(currentUserId, bookingId, status);
+            }
+            case "2" -> {
+                System.out.print("Enter Booking ID: ");
+                String bookingId = sc.nextLine().trim();
+                System.out.print("Enter new payment status: ");
+                String status = sc.nextLine().trim();
+                guideService.updatePaymentStatusForGuide(currentUserId, bookingId, status);
+            }
+            case "3" -> { /* back */ }
+            default -> System.out.println("Invalid choice!");
         }
     }
 
     // ===================== MANAGER =====================
-
     private static void managerMenu() {
         boolean inMenu = true;
-
         while (inMenu && currentUserId != null) {
             System.out.println("\n" + "=".repeat(70));
             System.out.println("MANAGER MENU - " + (currentUserName == null ? "" : currentUserName.toUpperCase()));
             System.out.println("=".repeat(70));
-            System.out.println("1. View My Hotel (Prototype)");
-            System.out.println("2. Update Room Availability");
-            System.out.println("3. Update Hotel Price");
-            System.out.println("4. View Bookings (Prototype)");
-            System.out.println("5. View Hotel Ratings");
-            System.out.println("6. Logout");
+            System.out.println("1. View My Hotel");
+            System.out.println("2. Add My Hotel");
+            System.out.println("3. Manage Food Items");
+            System.out.println("4. Update Room Availability");
+            System.out.println("5. Update Hotel Price");
+            System.out.println("6. View Bookings");
+            System.out.println("7. Manage Booking Status");
+            System.out.println("8. View Hotel Ratings");
+            System.out.println("9. Logout");
             System.out.print("Choose option: ");
 
             String choice = sc.nextLine().trim();
             switch (choice) {
-                case "1" -> {
-                    System.out.println("[Manager]");
-                    System.out.println("Manager ID: " + currentUserId);
-                    System.out.println("Name: " + currentUserName);
-                    System.out.println("Hotel is linked by managerId in hotels table.");
-                }
-                case "2" -> {
+                case "1" -> hotelService.displayManagerHotel(currentUserId);
+                case "2" -> addMyHotelUI();
+                case "3" -> manageFoodUI();
+                case "4" -> {
                     int availability = readInt("Enter new room availability: ");
                     boolean ok = hotelService.updateRoomAvailabilityForManager(currentUserId, availability);
-                    if (ok) System.out.println("Room availability updated to " + availability);
+                    if (ok) System.out.println("Room availability updated.");
                 }
-                case "3" -> {
+                case "5" -> {
                     double newPrice = readDouble("Enter new price per night: ");
                     boolean ok = hotelService.updateHotelPriceForManager(currentUserId, newPrice);
-                    if (ok) System.out.println("Price updated to BDT " + newPrice);
+                    if (ok) System.out.println("Hotel price updated.");
                 }
-                case "4" -> System.out.println("Manager booking view is not implemented yet in this prototype.");
-                case "5" -> {
-                    System.out.print("Enter hotel name: ");
-                    String hotelName = sc.nextLine().trim();
-                    ratingService.displayRatings("HOTEL", hotelName);
+                case "6" -> hotelService.displayManagerHotelBookings(currentUserId);
+                case "7" -> manageManagerBookings();
+                case "8" -> {
+                    Hotel myHotel = hotelService.getHotelByManagerId(currentUserId);
+                    if (myHotel == null) System.out.println("No hotel found for this manager!");
+                    else ratingService.displayRatings("HOTEL", myHotel.getHotelName());
                 }
-                case "6" -> {
-                    logout();
-                    inMenu = false;
-                }
+                case "9" -> { logout(); inMenu = false; }
                 default -> System.out.println("Invalid choice!");
             }
         }
     }
 
-    // ===================== HELPERS =====================
+    private static void addMyHotelUI() {
+        Hotel existing = hotelService.getHotelByManagerId(currentUserId);
+        if (existing != null) {
+            System.out.println("You already have a hotel in the database.");
+            hotelService.displayHotelInfo(existing);
+            return;
+        }
 
+        System.out.print("Hotel name: ");
+        String name = sc.nextLine().trim();
+
+        System.out.print("Location: ");
+        String location = sc.nextLine().trim();
+
+        double price = readDouble("Price per night (BDT): ");
+
+        int totalRooms = readInt("Total rooms: ");
+
+        System.out.print("Room category: ");
+        String category = sc.nextLine().trim();
+
+        System.out.print("Features (comma separated): ");
+        String features = sc.nextLine().trim();
+
+        managerService.addHotel(currentUserId, name, location, price, totalRooms, category, features);
+    }
+
+    private static void manageFoodUI() {
+        boolean loop = true;
+        while (loop) {
+            hotelService.displayFoodMenuForManager(currentUserId);
+
+            System.out.println("FOOD MENU ACTIONS");
+            System.out.println("1. Add item");
+            System.out.println("2. Update item");
+            System.out.println("3. Delete item");
+            System.out.println("4. Back");
+            System.out.print("Choose: ");
+
+            String c = sc.nextLine().trim();
+            switch (c) {
+                case "1" -> {
+                    System.out.print("Food name: ");
+                    String name = sc.nextLine().trim();
+                    System.out.print("Category: ");
+                    String cat = sc.nextLine().trim();
+                    double price = readDouble("Price (BDT): ");
+                    System.out.print("Description: ");
+                    String desc = sc.nextLine().trim();
+                    System.out.print("Available? (y/n): ");
+                    boolean av = sc.nextLine().trim().equalsIgnoreCase("y");
+                    hotelService.addFoodItemForManager(currentUserId, name, cat, price, desc, av);
+                }
+                case "2" -> {
+                    System.out.print("MenuID: ");
+                    String menuId = sc.nextLine().trim();
+                    System.out.print("Food name: ");
+                    String name = sc.nextLine().trim();
+                    System.out.print("Category: ");
+                    String cat = sc.nextLine().trim();
+                    double price = readDouble("Price (BDT): ");
+                    System.out.print("Description: ");
+                    String desc = sc.nextLine().trim();
+                    System.out.print("Available? (y/n): ");
+                    boolean av = sc.nextLine().trim().equalsIgnoreCase("y");
+                    hotelService.updateFoodItemForManager(currentUserId, menuId, name, cat, price, desc, av);
+                }
+                case "3" -> {
+                    System.out.print("MenuID: ");
+                    String menuId = sc.nextLine().trim();
+                    hotelService.deleteFoodItemForManager(currentUserId, menuId);
+                }
+                case "4" -> loop = false;
+                default -> System.out.println("Invalid choice!");
+            }
+        }
+    }
+
+    private static void manageManagerBookings() {
+        hotelService.displayManagerHotelBookings(currentUserId);
+
+        System.out.println("\nMANAGER BOOKING ACTIONS");
+        System.out.println("1. Update Booking Status (PENDING/CONFIRMED/COMPLETED/FAILED/CANCELLED)");
+        System.out.println("2. Cancel Booking");
+        System.out.println("3. Back");
+        System.out.print("Choose option: ");
+
+        String choice = sc.nextLine().trim();
+        switch (choice) {
+            case "1" -> {
+                System.out.print("Enter Booking ID: ");
+                String bookingId = sc.nextLine().trim();
+                System.out.print("Enter new status: ");
+                String status = sc.nextLine().trim();
+                hotelService.updateBookingStatusForManager(currentUserId, bookingId, status);
+            }
+            case "2" -> {
+                System.out.print("Enter Booking ID to cancel: ");
+                String bookingId = sc.nextLine().trim();
+                hotelService.cancelHotelBookingForManager(currentUserId, bookingId);
+            }
+            case "3" -> { /* back */ }
+            default -> System.out.println("Invalid choice!");
+        }
+    }
+
+    // ===================== HELPERS =====================
     private static void logout() {
         currentUserId = null;
         currentUserName = null;

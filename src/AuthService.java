@@ -16,10 +16,12 @@ public class AuthService {
 
     private static final Pattern EMAIL_PATTERN =
             Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
     private static final Pattern PHONE_PATTERN =
             Pattern.compile("^(?:\\+?88)?01[3-9]\\d{8}$");
+
     private static final Pattern PASSWORD_PATTERN =
-            Pattern.compile("^.{6,}$"); // simple for prototype
+            Pattern.compile("^.{6,}$");
 
     private static final SecureRandom RAND = new SecureRandom();
 
@@ -28,10 +30,9 @@ public class AuthService {
     }
 
     // -------------------- Tourist --------------------
-
     public boolean registerTourist(String name, String email, String phone, String nid,
-                                  String passport, String dob, String country,
-                                  String address, String password) {
+                                   String passport, String dob, String country,
+                                   String address, String password) {
 
         name = safeTrim(name);
         email = safeTrim(email);
@@ -52,6 +53,7 @@ public class AuthService {
                 System.out.println("Email already registered!");
                 return false;
             }
+
             if (phoneExistsInUsers(phone)) {
                 System.out.println("Phone already registered!");
                 return false;
@@ -74,12 +76,11 @@ public class AuthService {
                 ps.setString(6, nid);
                 ps.setString(7, passport);
 
-                if (dob == null || dob.isBlank()) ps.setNull(8, Types.DATE);
+                if (dob == null) ps.setNull(8, Types.DATE);
                 else ps.setDate(8, Date.valueOf(dob));
 
                 ps.setString(9, country);
                 ps.setString(10, address);
-
                 ps.executeUpdate();
             }
 
@@ -94,13 +95,11 @@ public class AuthService {
 
     public User loginTourist(String email, String password) {
         email = safeTrim(email);
-        if (email == null || email.isBlank() || password == null || password.isBlank()) return null;
+        if (email == null || password == null || password.isBlank()) return null;
 
         String sql = "SELECT userid, username, useremail, userpassword FROM users WHERE useremail = ? LIMIT 1";
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
 
@@ -109,7 +108,6 @@ public class AuthService {
 
                 return new User(rs.getString("userid"), rs.getString("username"), rs.getString("useremail"), "TOURIST");
             }
-
         } catch (SQLException e) {
             System.out.println("Tourist login error: " + e.getMessage());
             return null;
@@ -117,10 +115,9 @@ public class AuthService {
     }
 
     // -------------------- Guide --------------------
-
     public boolean registerGuide(String name, String email, String phone,
-                                String division, String district, String languages,
-                                String specialization, int experience, String password) {
+                                 String division, String district, String languages,
+                                 String specialization, int experience, String password) {
 
         name = safeTrim(name);
         email = safeTrim(email);
@@ -173,22 +170,19 @@ public class AuthService {
 
     public Guide loginGuide(String email, String password) {
         email = safeTrim(email);
-        if (email == null || email.isBlank() || password == null || password.isBlank()) return null;
+        if (email == null || password == null || password.isBlank()) return null;
 
         String sql = "SELECT guideid, guidename, guideemail, guidepassword, status FROM guides WHERE guideemail = ? LIMIT 1";
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
-
                 if ("INACTIVE".equalsIgnoreCase(rs.getString("status"))) return null;
+
                 if (!verifyPassword(password, rs.getString("guidepassword"))) return null;
 
                 return new Guide(rs.getString("guideid"), rs.getString("guidename"), rs.getString("guideemail"));
             }
-
         } catch (SQLException e) {
             System.out.println("Guide login error: " + e.getMessage());
             return null;
@@ -196,14 +190,15 @@ public class AuthService {
     }
 
     // -------------------- Manager --------------------
-
     public boolean registerManager(String name, String email, String phone,
-                                  String hotelName, String hotelNid,
-                                  String registrationNumber, String password) {
+                                   String managerNid,
+                                   String hotelName, String hotelNid,
+                                   String registrationNumber, String password) {
 
         name = safeTrim(name);
         email = safeTrim(email);
         phone = safeTrim(phone);
+        managerNid = safeTrim(managerNid);
 
         if (!validateName(name) || !validateEmail(email) || !validatePhone(phone) || !validatePassword(password)) {
             System.out.println("Invalid input format!");
@@ -221,18 +216,20 @@ public class AuthService {
 
             String sql =
                     "INSERT INTO managers " +
-                    "(managerid, managername, manageremail, managerphone, managerpassword, hotelname, hotelnid, registrationnumber, status) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')";
+                    "(managerid, managername, manageremail, managerphone, managernid, managerpassword, " +
+                    " hotelname, hotelnid, registrationnumber, status) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, managerId);
                 ps.setString(2, name);
                 ps.setString(3, email);
                 ps.setString(4, phone);
-                ps.setString(5, hashed);
-                ps.setString(6, safeTrim(hotelName));
-                ps.setString(7, safeTrim(hotelNid));
-                ps.setString(8, safeTrim(registrationNumber));
+                ps.setString(5, managerNid);
+                ps.setString(6, hashed);
+                ps.setString(7, safeTrim(hotelName));
+                ps.setString(8, safeTrim(hotelNid));
+                ps.setString(9, safeTrim(registrationNumber));
                 ps.executeUpdate();
             }
 
@@ -247,17 +244,15 @@ public class AuthService {
 
     public Manager loginManager(String email, String password) {
         email = safeTrim(email);
-        if (email == null || email.isBlank() || password == null || password.isBlank()) return null;
+        if (email == null || password == null || password.isBlank()) return null;
 
         String sql = "SELECT managerid, managername, manageremail, managerpassword, status FROM managers WHERE manageremail = ? LIMIT 1";
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
-
                 if ("INACTIVE".equalsIgnoreCase(rs.getString("status"))) return null;
+
                 if (!verifyPassword(password, rs.getString("managerpassword"))) return null;
 
                 Manager m = new Manager();
@@ -267,7 +262,6 @@ public class AuthService {
                 m.setStatus(rs.getString("status"));
                 return m;
             }
-
         } catch (SQLException e) {
             System.out.println("Manager login error: " + e.getMessage());
             return null;
@@ -275,12 +269,13 @@ public class AuthService {
     }
 
     // -------------------- DB checks --------------------
-
     private boolean emailExistsInUsers(String email) throws SQLException {
         String sql = "SELECT 1 FROM users WHERE useremail = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
-            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 
@@ -288,7 +283,9 @@ public class AuthService {
         String sql = "SELECT 1 FROM users WHERE userphone = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, phone);
-            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 
@@ -296,7 +293,9 @@ public class AuthService {
         String sql = "SELECT 1 FROM guides WHERE guideemail = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
-            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 
@@ -304,16 +303,28 @@ public class AuthService {
         String sql = "SELECT 1 FROM managers WHERE manageremail = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email);
-            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 
     // -------------------- Validation --------------------
+    private boolean validateName(String name) {
+        return name != null && name.length() >= 2;
+    }
 
-    private boolean validateName(String name) { return name != null && name.length() >= 2; }
-    private boolean validateEmail(String email) { return email != null && EMAIL_PATTERN.matcher(email).matches(); }
-    private boolean validatePhone(String phone) { return phone != null && PHONE_PATTERN.matcher(phone).matches(); }
-    private boolean validatePassword(String pw) { return pw != null && PASSWORD_PATTERN.matcher(pw).matches(); }
+    private boolean validateEmail(String email) {
+        return email != null && EMAIL_PATTERN.matcher(email).matches();
+    }
+
+    private boolean validatePhone(String phone) {
+        return phone != null && PHONE_PATTERN.matcher(phone).matches();
+    }
+
+    private boolean validatePassword(String pw) {
+        return pw != null && PASSWORD_PATTERN.matcher(pw).matches();
+    }
 
     private String safeTrim(String s) {
         if (s == null) return null;
@@ -322,7 +333,6 @@ public class AuthService {
     }
 
     // -------------------- Password hashing --------------------
-
     private String hashPassword(String password) throws Exception {
         byte[] salt = new byte[16];
         RAND.nextBytes(salt);
@@ -337,16 +347,17 @@ public class AuthService {
     private boolean verifyPassword(String password, String stored) {
         try {
             if (stored == null || !stored.contains(":")) return false;
-
             String[] parts = stored.split(":", 2);
+
             byte[] salt = Base64.getDecoder().decode(parts[0]);
             byte[] expected = Base64.getDecoder().decode(parts[1]);
 
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(salt);
-            byte[] actual = md.digest(password.getBytes(StandardCharsets.UTF_8));
 
+            byte[] actual = md.digest(password.getBytes(StandardCharsets.UTF_8));
             if (actual.length != expected.length) return false;
+
             for (int i = 0; i < actual.length; i++) {
                 if (actual[i] != expected[i]) return false;
             }

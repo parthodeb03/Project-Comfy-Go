@@ -284,6 +284,30 @@ CREATE TABLE IF NOT EXISTS session_logs (
   INDEX idx_session_time (timestamp)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+ALTER TABLE managers
+  ADD COLUMN managernid VARCHAR(20) UNIQUE AFTER managerphone;
+
+-- ===== Hotels: add real description + enforce 1 hotel per manager =====
+ALTER TABLE hotels
+  ADD COLUMN hoteldescription TEXT AFTER hotelfeatures;
+
+-- one manager -> one hotel (optional but recommended)
+ALTER TABLE hotels
+  ADD UNIQUE KEY uq_hotels_managerid (managerid);
+
+-- ===== Payment: only COMPLETED / CANCELLED =====
+-- If you have old statuses, normalize them first:
+UPDATE payment SET paymentstatus='CANCELLED'
+WHERE paymentstatus NOT IN ('COMPLETED','CANCELLED');
+
+-- Make it an ENUM so DB enforces only 2 statuses:
+ALTER TABLE payment
+  MODIFY paymentstatus ENUM('COMPLETED','CANCELLED') NOT NULL DEFAULT 'CANCELLED';
+
+-- ===== Transport: issue date instead of arrival date =====
+ALTER TABLE transportbooking
+  CHANGE COLUMN arrivaldate issuedate DATE;
+
 -- =========================================================
 -- ===================== SEED DATA =========================
 -- =========================================================
