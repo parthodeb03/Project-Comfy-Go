@@ -15,23 +15,16 @@ public class Booking {
     public static final String STATUS_CANCELLED = "CANCELLED";
 
     private String bookingId;
-
     private String userId;
-
-    // YYYY-MM-DD (nullable for non-hotel use, but your hotel flow should set them)
-    private String checkInDate;
-    private String checkOutDate;
-
+    private String checkInDate;   // YYYY-MM-DD
+    private String checkOutDate;  // YYYY-MM-DD
     private double totalPrice;
-
     private String bookingStatus = STATUS_PENDING;
-
     private String paymentId;
 
     private String hotelName;
     private String hotelLocation;
 
-    // Optional fields (kept for future use)
     private String guideName;
     private String guideId;
 
@@ -75,29 +68,15 @@ public class Booking {
     public int getNumberOfRooms() { return numberOfRooms; }
     public void setNumberOfRooms(int numberOfRooms) { this.numberOfRooms = numberOfRooms; }
 
-    /**
-     * Inserts into `booking` table (hotel booking).
-     * Column set matches comfygo.sql:
-     * booking(bookingid, userid, checkindate, checkoutdate, totalprice, bookingstatus, paymentid,
-     *         hotelname, hotellocation, guidename, guideid, numberofrooms)
-     */
     public boolean createBooking(Connection conn) {
         if (conn == null) return false;
-
-        if (isBlank(userId)) {
-            System.out.println("Booking create failed: userid is required.");
-            return false;
-        }
-
-        if (totalPrice <= 0) {
-            System.out.println("Booking create failed: totalprice must be > 0.");
-            return false;
-        }
+        if (isBlank(userId)) { System.out.println("Booking create failed: userid is required."); return false; }
+        if (totalPrice <= 0) { System.out.println("Booking create failed: totalprice must be > 0."); return false; }
 
         if (isBlank(bookingStatus)) bookingStatus = STATUS_PENDING;
+        bookingStatus = bookingStatus.trim().toUpperCase();
 
-        // If this is a hotel booking (hotelName set), enforce check-in/out
-        boolean isHotelBooking = !isBlank(hotelName) || !isBlank(hotelLocation);
+        boolean isHotelBooking = !isBlank(hotelName) && !isBlank(hotelLocation);
         if (isHotelBooking) {
             if (isBlank(checkInDate) || isBlank(checkOutDate)) {
                 System.out.println("Booking create failed: check-in and check-out dates are required for hotel booking.");
@@ -124,14 +103,13 @@ public class Booking {
             String sql =
                     "INSERT INTO booking " +
                     "(bookingid, userid, checkindate, checkoutdate, totalprice, bookingstatus, paymentid, " +
-                    " hotelname, hotellocation, guidename, guideid, numberofrooms) " +
+                    "hotelname, hotellocation, guidename, guideid, numberofrooms) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, bookingId);
                 ps.setString(2, userId.trim());
 
-                // Dates are nullable in schema, so support null safely
                 if (isBlank(checkInDate)) ps.setNull(3, java.sql.Types.DATE);
                 else ps.setDate(3, Date.valueOf(checkInDate.trim()));
 
@@ -139,7 +117,7 @@ public class Booking {
                 else ps.setDate(4, Date.valueOf(checkOutDate.trim()));
 
                 ps.setDouble(5, totalPrice);
-                ps.setString(6, bookingStatus.trim().toUpperCase());
+                ps.setString(6, bookingStatus);
 
                 if (isBlank(paymentId)) ps.setNull(7, java.sql.Types.VARCHAR);
                 else ps.setString(7, paymentId.trim());
@@ -157,10 +135,8 @@ public class Booking {
                 else ps.setString(11, guideId.trim());
 
                 ps.setInt(12, Math.max(0, numberOfRooms));
-
                 return ps.executeUpdate() > 0;
             }
-
         } catch (SQLException e) {
             System.out.println("Booking create failed: " + e.getMessage());
             return false;
@@ -247,13 +223,10 @@ public class Booking {
         b.totalPrice = rs.getDouble("totalprice");
         b.bookingStatus = rs.getString("bookingstatus");
         b.paymentId = rs.getString("paymentid");
-
         b.hotelName = rs.getString("hotelname");
         b.hotelLocation = rs.getString("hotellocation");
-
         b.guideName = rs.getString("guidename");
         b.guideId = rs.getString("guideid");
-
         b.numberOfRooms = rs.getInt("numberofrooms");
         return b;
     }
@@ -268,18 +241,5 @@ public class Booking {
 
     private static boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
-    }
-
-    @Override
-    public String toString() {
-        return "Booking{" +
-                "bookingId='" + bookingId + '\'' +
-                ", userId='" + userId + '\'' +
-                ", hotelName='" + hotelName + '\'' +
-                ", checkInDate='" + checkInDate + '\'' +
-                ", checkOutDate='" + checkOutDate + '\'' +
-                ", totalPrice=" + totalPrice +
-                ", bookingStatus='" + bookingStatus + '\'' +
-                '}';
     }
 }

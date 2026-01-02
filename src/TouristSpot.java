@@ -52,8 +52,6 @@ public class TouristSpot {
     public String getVisitingHours() { return visitingHours; }
     public void setVisitingHours(String visitingHours) { this.visitingHours = visitingHours; }
 
-    // ---------- CRUD (optional helpers) ----------
-
     public boolean createSpot(Connection conn) {
         if (conn == null) return false;
 
@@ -80,7 +78,6 @@ public class TouristSpot {
                 ps.setString(10, visitingHours);
                 return ps.executeUpdate() > 0;
             }
-
         } catch (SQLException e) {
             System.out.println("Error creating spot: " + e.getMessage());
             return false;
@@ -92,10 +89,8 @@ public class TouristSpot {
         if (spotId == null || spotId.trim().isEmpty()) return null;
 
         String sql = "SELECT * FROM touristspots WHERE spotid = ? LIMIT 1";
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, spotId.trim());
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
 
@@ -113,7 +108,6 @@ public class TouristSpot {
                 s.visitingHours = rs.getString("visitinghours");
                 return s;
             }
-
         } catch (SQLException e) {
             System.out.println("Error fetching spot: " + e.getMessage());
             return null;
@@ -141,7 +135,6 @@ public class TouristSpot {
             ps.setString(9, visitingHours);
             ps.setString(10, spotId);
             return ps.executeUpdate() > 0;
-
         } catch (SQLException e) {
             System.out.println("Error updating spot: " + e.getMessage());
             return false;
@@ -153,11 +146,9 @@ public class TouristSpot {
         if (spotId == null || spotId.trim().isEmpty()) return false;
 
         String sql = "DELETE FROM touristspots WHERE spotid = ?";
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, spotId);
             return ps.executeUpdate() > 0;
-
         } catch (SQLException e) {
             System.out.println("Error deleting spot: " + e.getMessage());
             return false;

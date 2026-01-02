@@ -43,7 +43,6 @@ public class RatingService {
         }
 
         String sql = "INSERT INTO ratings (ratingid, userid, ratingtype, targetname, rating, review) VALUES (?, ?, ?, ?, ?, ?)";
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, ratingId);
             ps.setString(2, userId.trim());
@@ -57,7 +56,6 @@ public class RatingService {
             ps.executeUpdate();
             System.out.println("Rating submitted successfully! Rating ID: " + ratingId);
             return true;
-
         } catch (SQLException e) {
             System.out.println("Rating submission failed: " + e.getMessage());
             return false;
@@ -85,7 +83,6 @@ public class RatingService {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, ratingType.trim().toUpperCase());
             ps.setString(2, targetName.trim());
-
             try (ResultSet rs = ps.executeQuery()) {
                 boolean has = false;
 
@@ -95,11 +92,9 @@ public class RatingService {
 
                 while (rs.next()) {
                     has = true;
-
                     int r = rs.getInt("rating");
                     String rev = rs.getString("review");
                     Timestamp dt = rs.getTimestamp("ratingdate");
-
                     String stars = "*".repeat(Math.max(0, r)) + "-".repeat(Math.max(0, 5 - r));
 
                     System.out.println(stars + " (" + r + "/5)");
@@ -111,7 +106,6 @@ public class RatingService {
                 if (!has) System.out.println("No ratings available yet.");
                 System.out.println("=".repeat(70));
             }
-
         } catch (SQLException e) {
             System.out.println("Failed to fetch ratings: " + e.getMessage());
         }
@@ -119,37 +113,29 @@ public class RatingService {
 
     public double getAverageRating(String ratingType, String targetName) {
         String sql = "SELECT AVG(rating) AS avgrating FROM ratings WHERE ratingtype = ? AND targetname = ?";
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, ratingType.trim().toUpperCase());
             ps.setString(2, targetName.trim());
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getDouble("avgrating");
             }
-
         } catch (SQLException e) {
             System.out.println("Failed to fetch average rating: " + e.getMessage());
         }
-
         return 0.0;
     }
 
     public int getRatingCount(String ratingType, String targetName) {
         String sql = "SELECT COUNT(*) AS cnt FROM ratings WHERE ratingtype = ? AND targetname = ?";
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, ratingType.trim().toUpperCase());
             ps.setString(2, targetName.trim());
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt("cnt");
             }
-
         } catch (SQLException e) {
             System.out.println("Failed to fetch rating count: " + e.getMessage());
         }
-
         return 0;
     }
 }

@@ -5,10 +5,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * Numeric ID generator (string of digits).
- * Optionally checks DB uniqueness for a given table + column.
+ * Numeric ID generator (digits only).
+ * Optionally checks DB uniqueness for a given table/column.
  *
- * NOTE: table/column are concatenated into SQL; pass only trusted constants from code.
+ * NOTE: table/column are concatenated into SQL. Only pass trusted constants.
  */
 public final class IdGenerator {
 
@@ -16,27 +16,25 @@ public final class IdGenerator {
 
     private IdGenerator() {}
 
-    /**
-     * Returns a numeric string with exactly {@code digits} digits.
-     */
+    /** Returns a numeric string with exactly {@code digits} digits. */
     public static String randomNumericId(int digits) {
         if (digits < 2 || digits > 18) {
             throw new IllegalArgumentException("digits must be between 2 and 18");
         }
 
-        long min = pow10(digits - 1);
-        long maxExclusive = pow10(digits);
+        long min = pow10(digits - 1);     // e.g. 1000 for 4 digits
+        long maxExclusive = pow10(digits); // e.g. 10000 for 4 digits
 
         long value = nextLongBounded(min, maxExclusive);
         return String.valueOf(value);
     }
 
     /**
-     * Generates a numeric string ID and checks DB uniqueness against table+column.
+     * Generates a numeric ID and checks DB uniqueness against table(column).
+     * Falls back to a random numeric ID if maxAttempts is exhausted.
      */
-    public static String uniqueNumericId(Connection conn, String table, String column, int digits, int maxAttempts)
-            throws SQLException {
-
+    public static String uniqueNumericId(Connection conn, String table, String column,
+                                         int digits, int maxAttempts) throws SQLException {
         if (conn == null) throw new IllegalArgumentException("Connection cannot be null");
         if (table == null || table.trim().isEmpty()) throw new IllegalArgumentException("table cannot be empty");
         if (column == null || column.trim().isEmpty()) throw new IllegalArgumentException("column cannot be empty");
@@ -50,12 +48,12 @@ public final class IdGenerator {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, id);
                 try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) return id;
+                    if (!rs.next()) return id; // unique
                 }
             }
         }
 
-        // Prototype fallback (still returns valid digits)
+        // Fallback still returns valid digits
         return randomNumericId(digits);
     }
 
@@ -65,6 +63,7 @@ public final class IdGenerator {
         return result;
     }
 
+    /** Returns random long in [origin, bound). */
     private static long nextLongBounded(long origin, long bound) {
         if (origin >= bound) throw new IllegalArgumentException("origin must be < bound");
 

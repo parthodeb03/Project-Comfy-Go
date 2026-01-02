@@ -33,18 +33,19 @@ public class TransportService {
             String vehicleRegNo,
             String vehicleCompany
     ) {
-        if (userId == null || userId.trim().isEmpty()) {
+        if (conn == null) return false;
+
+        if (isBlank(userId)) {
             System.out.println("User ID is required!");
             return false;
         }
 
-        if (transportType == null || transportType.trim().isEmpty()) {
+        if (isBlank(transportType)) {
             System.out.println("Transport type is required!");
             return false;
         }
 
-        if (departureLocation == null || departureLocation.trim().isEmpty()
-                || arrivalLocation == null || arrivalLocation.trim().isEmpty()) {
+        if (isBlank(departureLocation) || isBlank(arrivalLocation)) {
             System.out.println("Departure and arrival locations are required!");
             return false;
         }
@@ -65,8 +66,8 @@ public class TransportService {
             String sql =
                     "INSERT INTO transportbooking " +
                     "(ticketid, userid, transporttype, departurelocation, arrivallocation, " +
-                    "departuredate, issuedate, numberofpassengers, seatnumber, bookingstatus, " +
-                    "fare, vehicleregistration, vehiclecompany) " +
+                    " departuredate, issuedate, numberofpassengers, seatnumber, bookingstatus, " +
+                    " fare, vehicleregistration, vehiclecompany) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -78,11 +79,11 @@ public class TransportService {
                 ps.setDate(6, Date.valueOf(departureDate.trim()));
                 ps.setDate(7, Date.valueOf(issueDate.trim()));
                 ps.setInt(8, passengers);
-                ps.setString(9, seatNumber);
+                ps.setString(9, isBlank(seatNumber) ? "NA" : seatNumber.trim());
                 ps.setString(10, STATUS_CONFIRMED);
                 ps.setDouble(11, fare);
-                ps.setString(12, vehicleRegNo);
-                ps.setString(13, vehicleCompany);
+                ps.setString(12, isBlank(vehicleRegNo) ? "NA" : vehicleRegNo.trim());
+                ps.setString(13, isBlank(vehicleCompany) ? "NA" : vehicleCompany.trim());
 
                 int rows = ps.executeUpdate();
                 if (rows > 0) {
@@ -107,6 +108,8 @@ public class TransportService {
     /** Routes are stored as rows with userid IS NULL and bookingstatus=ROUTE (seeded). */
     public List<String> getAllRoutes() {
         List<String> routes = new ArrayList<>();
+        if (conn == null) return routes;
+
         String sql =
                 "SELECT transporttype, departurelocation, arrivallocation, vehiclecompany, fare " +
                 "FROM transportbooking " +
@@ -129,6 +132,7 @@ public class TransportService {
         } catch (SQLException e) {
             System.out.println("Route fetch failed: " + e.getMessage());
         }
+
         return routes;
     }
 
@@ -144,7 +148,8 @@ public class TransportService {
 
     public List<String> getUserTransportBookings(String userId) {
         List<String> bookings = new ArrayList<>();
-        if (userId == null || userId.trim().isEmpty()) return bookings;
+        if (conn == null) return bookings;
+        if (isBlank(userId)) return bookings;
 
         String sql =
                 "SELECT ticketid, transporttype, departurelocation, arrivallocation, departuredate, issuedate, " +
@@ -157,10 +162,11 @@ public class TransportService {
                 while (rs.next()) {
                     int pax = rs.getInt("numberofpassengers");
                     double perFare = rs.getDouble("fare");
+
                     bookings.add(
                             "[" + rs.getString("ticketid") + "] " +
                             rs.getString("transporttype") + " | " +
-                            rs.getString("departurelocation") + "->" + rs.getString("arrivallocation") + " | " +
+                            rs.getString("departurelocation") + " -> " + rs.getString("arrivallocation") + " | " +
                             "Dep: " + rs.getDate("departuredate") + " | " +
                             "Issue: " + rs.getDate("issuedate") + " | " +
                             "Pax: " + pax + " | " +
@@ -172,22 +178,26 @@ public class TransportService {
         } catch (SQLException e) {
             System.out.println("Transport booking fetch failed: " + e.getMessage());
         }
+
         return bookings;
     }
 
     public boolean cancelTicket(String userId, String ticketId) {
-        if (userId == null || userId.trim().isEmpty()) return false;
-        if (ticketId == null || ticketId.trim().isEmpty()) return false;
+        if (conn == null) return false;
+        if (isBlank(userId) || isBlank(ticketId)) return false;
 
         String sql = "UPDATE transportbooking SET bookingstatus = ? WHERE ticketid = ? AND userid = ?";
+
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, STATUS_CANCELLED);
             ps.setString(2, ticketId.trim());
             ps.setString(3, userId.trim());
+
             boolean ok = ps.executeUpdate() > 0;
             if (ok) System.out.println("Ticket cancelled successfully!");
             else System.out.println("Ticket not found / cannot cancel!");
             return ok;
+
         } catch (SQLException e) {
             System.out.println("Cancel failed: " + e.getMessage());
             return false;
@@ -195,6 +205,7 @@ public class TransportService {
     }
 
     // -------------------- seed routes --------------------
+
     private void ensureSeedRoutes() {
         if (conn == null) return;
 
@@ -206,7 +217,9 @@ public class TransportService {
                     if (rs.next() && rs.getInt("cnt") > 0) return;
                 }
             }
+
             seedMinimalRoutes();
+
         } catch (SQLException e) {
             System.out.println("Route seed check failed: " + e.getMessage());
         }
@@ -220,15 +233,17 @@ public class TransportService {
         insertRoute("Train", "Sylhet", "Dhaka", "Bangladesh Railway", d, 600);
     }
 
-    private void insertRoute(String type, String from, String to, String company, LocalDate d, double fare) throws SQLException {
+    private void insertRoute(String type, String from, String to, String company, LocalDate d, double fare)
+            throws SQLException {
+
         String ticketId = IdGenerator.uniqueNumericId(conn, "transportbooking", "ticketid", 12, 60);
 
         String sql =
                 "INSERT INTO transportbooking " +
                 "(ticketid, userid, transporttype, departurelocation, arrivallocation, " +
-                "departuredate, issuedate, numberofpassengers, seatnumber, bookingstatus, " +
-                "fare, vehicleregistration, vehiclecompany) " +
-                "VALUES (?, NULL, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'N/A', ?)";
+                " departuredate, issuedate, numberofpassengers, seatnumber, bookingstatus, " +
+                " fare, vehicleregistration, vehiclecompany) " +
+                "VALUES (?, NULL, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'NA', ?)";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, ticketId);
@@ -237,7 +252,7 @@ public class TransportService {
             ps.setString(4, to);
             ps.setDate(5, Date.valueOf(d));
             ps.setDate(6, Date.valueOf(d));
-            ps.setString(7, "R" + ticketId.substring(ticketId.length() - 4));
+            ps.setString(7, "R-" + ticketId.substring(Math.max(0, ticketId.length() - 4)));
             ps.setString(8, STATUS_ROUTE);
             ps.setDouble(9, fare);
             ps.setString(10, company);
@@ -252,5 +267,9 @@ public class TransportService {
         if (x.equalsIgnoreCase("air") || x.equalsIgnoreCase("flight")) return "Air";
         if (x.equalsIgnoreCase("launch")) return "Launch";
         return x;
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 }

@@ -5,33 +5,22 @@ import java.sql.SQLException;
 
 /**
  * Guide Entity - matches `guides` table used by AuthService/GuideService.
- *
- * Expected columns (from your services):
- * guides(guideid, guidename, guideemail, guidephone, guidepassword,
- *        guidedivision, guidedistrict, guidelanguage, specialization,
- *        rating, totalratings, isavailable, yearexperience, status, ...)
  */
 public class Guide {
 
     private String guideId;
     private String guideName;
     private String guideEmail;
-
     private String guidePhone;
     private String guidePassword;
-
     private String guideDivision;
     private String guideDistrict;
     private String guideLanguage;
-
     private String specialization;
-
     private double rating;
     private int totalRatings;
-
     private boolean isAvailable;
     private int yearExperience;
-
     private String status;
 
     public Guide() {

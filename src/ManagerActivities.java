@@ -23,6 +23,7 @@ public class ManagerActivities {
         return payment.updatePaymentStatus(conn, newStatus);
     }
 
+    // With your "2 statuses only" rule: cancellation is the closest to "refund"
     public boolean refundPayment(Payment payment) {
         if (payment == null) return false;
         return payment.updatePaymentStatus(conn, Payment.STATUS_CANCELLED);

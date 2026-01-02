@@ -13,34 +13,47 @@ public class ManagerService {
         this.conn = conn;
     }
 
-    // Backward-compatible: your ComfyGo currently calls this signature
-    public boolean addHotel(String managerId, String hotelName, String location, double pricePerNight,
-                            int totalRooms, String roomCategory, String features) {
-        return addHotel(managerId, hotelName, location, pricePerNight, totalRooms, roomCategory, features, "");
+    // Backward-compatible: your GUI may call this older signature (no description)
+    public boolean addHotel(String managerId, String hotelName, String location,
+                            double pricePerNight, int totalRooms,
+                            String roomCategory, String features) {
+        return addHotel(managerId, hotelName, location, pricePerNight, totalRooms,
+                roomCategory, features, "");
     }
 
-    // New: supports hoteldescription
-    public boolean addHotel(String managerId, String hotelName, String location, double pricePerNight,
-                            int totalRooms, String roomCategory, String features, String description) {
+    // New signature supports hoteldescription
+    public boolean addHotel(String managerId, String hotelName, String location,
+                            double pricePerNight, int totalRooms,
+                            String roomCategory, String features,
+                            String description) {
 
         if (conn == null) return false;
-        if (managerId == null || managerId.trim().isEmpty()) return false;
-        if (hotelName == null || hotelName.trim().isEmpty()) return false;
 
-        if (location == null) location = "";
+        managerId = safeTrim(managerId);
+        hotelName = safeTrim(hotelName);
+        location = safeTrim(location);
+        roomCategory = safeTrim(roomCategory);
+        features = safeTrim(features);
+        description = safeTrim(description);
+
+        if (managerId == null) return false;
+        if (hotelName == null) return false;
+        if (location == null) return false;
+        if (roomCategory == null) roomCategory = "Standard";
         if (features == null) features = "";
-        if (roomCategory == null) roomCategory = "";
         if (description == null) description = "";
 
         if (pricePerNight <= 0) {
             System.out.println("Price per night must be > 0!");
             return false;
         }
-
-        if (totalRooms < 0) totalRooms = 0;
+        if (totalRooms <= 0) {
+            System.out.println("Total rooms must be > 0!");
+            return false;
+        }
 
         try {
-            // If you added UNIQUE(hotels.managerid), this prevents duplicate insert errors
+            // Optional business rule: one manager can add only one hotel
             if (hasHotelForManager(managerId)) {
                 System.out.println("You already have a hotel added. One manager can add only one hotel.");
                 return false;
@@ -48,22 +61,24 @@ public class ManagerService {
 
             String hotelId = IdGenerator.uniqueNumericId(conn, "hotels", "hotelid", 12, 60);
 
-            String sql = "INSERT INTO hotels " +
+            String sql =
+                    "INSERT INTO hotels " +
                     "(hotelid, hotelname, hotellocation, hotelpricepernight, totalrooms, roomcategory, " +
                     " hotelfeatures, hoteldescription, roomavailability, managerid) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, hotelId);
-                ps.setString(2, hotelName.trim());
-                ps.setString(3, location.trim());
+                ps.setString(2, hotelName);
+                ps.setString(3, location);
                 ps.setDouble(4, pricePerNight);
                 ps.setInt(5, totalRooms);
-                ps.setString(6, roomCategory.trim());
-                ps.setString(7, features.trim());
-                ps.setString(8, description.trim());
-                ps.setInt(9, totalRooms); // initially all rooms available
-                ps.setString(10, managerId.trim());
+                ps.setString(6, roomCategory);
+                ps.setString(7, features);
+                ps.setString(8, description);
+                ps.setInt(9, totalRooms);     // initially all rooms available
+                ps.setString(10, managerId);
+
                 ps.executeUpdate();
             }
 
@@ -79,12 +94,14 @@ public class ManagerService {
 
     public Hotel getManagerHotel(String managerId) {
         if (conn == null) return null;
-        if (managerId == null || managerId.trim().isEmpty()) return null;
+
+        managerId = safeTrim(managerId);
+        if (managerId == null) return null;
 
         String sql = "SELECT * FROM hotels WHERE managerid = ? LIMIT 1";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, managerId.trim());
 
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, managerId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
 
@@ -98,11 +115,10 @@ public class ManagerService {
                 h.setRoomCategory(rs.getString("roomcategory"));
                 h.setTotalRooms(rs.getInt("totalrooms"));
                 h.setFeatures(rs.getString("hotelfeatures"));
-                h.setDescription(rs.getString("hoteldescription")); // NEW
+                h.setDescription(rs.getString("hoteldescription"));
                 h.setManagerId(rs.getString("managerid"));
                 return h;
             }
-
         } catch (SQLException e) {
             System.out.println("Failed to fetch hotel: " + e.getMessage());
             return null;
@@ -112,34 +128,35 @@ public class ManagerService {
     public List<String> getHotelBookings(String hotelId) {
         List<String> bookings = new ArrayList<>();
         if (conn == null) return bookings;
-        if (hotelId == null || hotelId.trim().isEmpty()) return bookings;
 
-        // booking table stores hotelname + hotellocation, so filter using both
+        hotelId = safeTrim(hotelId);
+        if (hotelId == null) return bookings;
+
+        // Booking table stores hotelname+hotellocation, so first read those from hotels by hotelId
         String sql =
-                "SELECT bookingid, hotelname, hotellocation, checkindate, checkoutdate, numberofrooms, bookingstatus, totalprice, paymentid " +
+                "SELECT bookingid, hotelname, hotellocation, checkindate, checkoutdate, numberofrooms, " +
+                "bookingstatus, totalprice, paymentid " +
                 "FROM booking " +
                 "WHERE hotelname = (SELECT hotelname FROM hotels WHERE hotelid = ? LIMIT 1) " +
-                "AND hotellocation = (SELECT hotellocation FROM hotels WHERE hotelid = ? LIMIT 1) " +
+                "  AND hotellocation = (SELECT hotellocation FROM hotels WHERE hotelid = ? LIMIT 1) " +
                 "ORDER BY checkindate DESC";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, hotelId.trim());
-            ps.setString(2, hotelId.trim());
+            ps.setString(1, hotelId);
+            ps.setString(2, hotelId);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String row =
-                            "[" + rs.getString("bookingid") + "] " +
+                            rs.getString("bookingid") + " | " +
                             rs.getDate("checkindate") + " to " + rs.getDate("checkoutdate") + " | " +
                             rs.getInt("numberofrooms") + " rooms | " +
-                            rs.getString("bookingstatus") + " | BDT " +
-                            rs.getDouble("totalprice") + " | PayID: " +
-                            rs.getString("paymentid");
-
+                            rs.getString("bookingstatus") + " | " +
+                            "BDT " + rs.getDouble("totalprice") + " | " +
+                            "PayID " + rs.getString("paymentid");
                     bookings.add(row);
                 }
             }
-
         } catch (SQLException e) {
             System.out.println("Failed to fetch bookings: " + e.getMessage());
         }
@@ -147,45 +164,51 @@ public class ManagerService {
         return bookings;
     }
 
-    // NOTE: For cancellations, use HotelService.cancelHotelBookingForManager(managerId, bookingId)
-    // because it also sets payment -> CANCELLED and restores rooms (your new rules).
+    // NOTE: Cancellation should go through HotelService because it also cancels payment + restores rooms.
     public boolean cancelBookingForManager(String managerId, String bookingId) {
         if (conn == null) return false;
-        if (managerId == null || managerId.trim().isEmpty()) return false;
-        if (bookingId == null || bookingId.trim().isEmpty()) return false;
+
+        managerId = safeTrim(managerId);
+        bookingId = safeTrim(bookingId);
+        if (managerId == null || bookingId == null) return false;
 
         HotelService hs = new HotelService(conn);
-        return hs.cancelHotelBookingForManager(managerId.trim(), bookingId.trim());
+        return hs.cancelHotelBookingForManager(managerId, bookingId);
     }
 
     public void displayHotelStats(String hotelId) {
         if (conn == null) return;
-        if (hotelId == null || hotelId.trim().isEmpty()) return;
+
+        hotelId = safeTrim(hotelId);
+        if (hotelId == null) return;
 
         String sql =
                 "SELECT " +
-                " (SELECT COUNT(*) FROM booking WHERE hotelname = h.hotelname AND hotellocation = h.hotellocation) AS total_bookings, " +
-                " (SELECT COUNT(*) FROM booking WHERE hotelname = h.hotelname AND hotellocation = h.hotellocation AND bookingstatus = 'CONFIRMED') AS confirmed_bookings, " +
-                " (SELECT AVG(rating) FROM ratings WHERE ratingtype = 'HOTEL' AND targetname = h.hotelname) AS avg_rating, " +
-                " h.roomavailability, h.totalrooms " +
+                "  (SELECT COUNT(*) FROM booking b " +
+                "     WHERE b.hotelname = h.hotelname AND b.hotellocation = h.hotellocation) AS totalbookings, " +
+                "  (SELECT COUNT(*) FROM booking b " +
+                "     WHERE b.hotelname = h.hotelname AND b.hotellocation = h.hotellocation " +
+                "       AND UPPER(b.bookingstatus) = 'CONFIRMED') AS confirmedbookings, " +
+                "  (SELECT AVG(r.rating) FROM ratings r " +
+                "     WHERE UPPER(r.ratingtype) = 'HOTEL' AND r.targetname = h.hotelname) AS avgrating, " +
+                "  h.roomavailability, h.totalrooms " +
                 "FROM hotels h WHERE h.hotelid = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, hotelId.trim());
+            ps.setString(1, hotelId);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return;
 
-                System.out.println("\n" + "=".repeat(70));
+                System.out.println("-".repeat(70));
                 System.out.println("HOTEL STATISTICS");
-                System.out.println("=".repeat(70));
-                System.out.println("Total Bookings: " + rs.getInt("total_bookings"));
-                System.out.println("Confirmed Bookings: " + rs.getInt("confirmed_bookings"));
-                System.out.println("Average Rating: " + rs.getDouble("avg_rating"));
-                System.out.println("Available Rooms: " + rs.getInt("roomavailability") + "/" + rs.getInt("totalrooms"));
-                System.out.println("=".repeat(70));
+                System.out.println("-".repeat(70));
+                System.out.println("Total Bookings: " + rs.getInt("totalbookings"));
+                System.out.println("Confirmed Bookings: " + rs.getInt("confirmedbookings"));
+                System.out.println("Average Rating: " + rs.getDouble("avgrating"));
+                System.out.println("Available Rooms: " + rs.getInt("roomavailability") + " / " + rs.getInt("totalrooms"));
+                System.out.println("-".repeat(70));
             }
-
         } catch (SQLException e) {
             System.out.println("Failed to fetch statistics: " + e.getMessage());
         }
@@ -193,13 +216,17 @@ public class ManagerService {
 
     public boolean updateHotelFeatures(String hotelId, String newFeatures) {
         if (conn == null) return false;
-        if (hotelId == null || hotelId.trim().isEmpty()) return false;
+
+        hotelId = safeTrim(hotelId);
+        newFeatures = safeTrim(newFeatures);
+        if (hotelId == null) return false;
         if (newFeatures == null) newFeatures = "";
 
         String sql = "UPDATE hotels SET hotelfeatures = ? WHERE hotelid = ?";
+
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newFeatures.trim());
-            ps.setString(2, hotelId.trim());
+            ps.setString(1, newFeatures);
+            ps.setString(2, hotelId);
             boolean ok = ps.executeUpdate() > 0;
             if (ok) System.out.println("Hotel features updated!");
             return ok;
@@ -211,13 +238,17 @@ public class ManagerService {
 
     public boolean updateHotelDescription(String hotelId, String newDescription) {
         if (conn == null) return false;
-        if (hotelId == null || hotelId.trim().isEmpty()) return false;
+
+        hotelId = safeTrim(hotelId);
+        newDescription = safeTrim(newDescription);
+        if (hotelId == null) return false;
         if (newDescription == null) newDescription = "";
 
         String sql = "UPDATE hotels SET hoteldescription = ? WHERE hotelid = ?";
+
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newDescription.trim());
-            ps.setString(2, hotelId.trim());
+            ps.setString(1, newDescription);
+            ps.setString(2, hotelId);
             boolean ok = ps.executeUpdate() > 0;
             if (ok) System.out.println("Hotel description updated!");
             return ok;
@@ -230,10 +261,16 @@ public class ManagerService {
     private boolean hasHotelForManager(String managerId) throws SQLException {
         String sql = "SELECT 1 FROM hotels WHERE managerid = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, managerId.trim());
+            ps.setString(1, managerId);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
         }
+    }
+
+    private static String safeTrim(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
     }
 }

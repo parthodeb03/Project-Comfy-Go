@@ -30,6 +30,7 @@ public class AuthService {
     }
 
     // -------------------- Tourist --------------------
+
     public boolean registerTourist(String name, String email, String phone, String nid,
                                    String passport, String dob, String country,
                                    String address, String password) {
@@ -53,7 +54,6 @@ public class AuthService {
                 System.out.println("Email already registered!");
                 return false;
             }
-
             if (phoneExistsInUsers(phone)) {
                 System.out.println("Phone already registered!");
                 return false;
@@ -93,6 +93,25 @@ public class AuthService {
         }
     }
 
+    public static class LoginResult {
+    private final String id, name, role;
+    public LoginResult(String id, String name, String role){ this.id=id; this.name=name; this.role=role; }
+    public String getId(){ return id; }
+    public String getName(){ return name; }
+    public String getRole(){ return role; }
+}
+
+public LoginResult login(String email, String password) {
+    User u = loginTourist(email, password);
+    if (u != null) return new LoginResult(u.getUserID(), u.getUserName(), "Tourist");
+    Guide g = loginGuide(email, password);
+    if (g != null) return new LoginResult(g.getGuideId(), g.getGuideName(), "Tour Guide");
+    Manager m = loginManager(email, password);
+    if (m != null) return new LoginResult(m.getManagerId(), m.getManagerName(), "Hotel Manager");
+    return null;
+}
+
+
     public User loginTourist(String email, String password) {
         email = safeTrim(email);
         if (email == null || password == null || password.isBlank()) return null;
@@ -115,6 +134,7 @@ public class AuthService {
     }
 
     // -------------------- Guide --------------------
+
     public boolean registerGuide(String name, String email, String phone,
                                  String division, String district, String languages,
                                  String specialization, int experience, String password) {
@@ -178,7 +198,6 @@ public class AuthService {
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
                 if ("INACTIVE".equalsIgnoreCase(rs.getString("status"))) return null;
-
                 if (!verifyPassword(password, rs.getString("guidepassword"))) return null;
 
                 return new Guide(rs.getString("guideid"), rs.getString("guidename"), rs.getString("guideemail"));
@@ -190,6 +209,7 @@ public class AuthService {
     }
 
     // -------------------- Manager --------------------
+
     public boolean registerManager(String name, String email, String phone,
                                    String managerNid,
                                    String hotelName, String hotelNid,
@@ -252,7 +272,6 @@ public class AuthService {
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
                 if ("INACTIVE".equalsIgnoreCase(rs.getString("status"))) return null;
-
                 if (!verifyPassword(password, rs.getString("managerpassword"))) return null;
 
                 Manager m = new Manager();
@@ -269,6 +288,7 @@ public class AuthService {
     }
 
     // -------------------- DB checks --------------------
+
     private boolean emailExistsInUsers(String email) throws SQLException {
         String sql = "SELECT 1 FROM users WHERE useremail = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -310,6 +330,7 @@ public class AuthService {
     }
 
     // -------------------- Validation --------------------
+
     private boolean validateName(String name) {
         return name != null && name.length() >= 2;
     }
@@ -333,14 +354,13 @@ public class AuthService {
     }
 
     // -------------------- Password hashing --------------------
+
     private String hashPassword(String password) throws Exception {
         byte[] salt = new byte[16];
         RAND.nextBytes(salt);
-
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         md.update(salt);
         byte[] hash = md.digest(password.getBytes(StandardCharsets.UTF_8));
-
         return Base64.getEncoder().encodeToString(salt) + ":" + Base64.getEncoder().encodeToString(hash);
     }
 
@@ -348,21 +368,18 @@ public class AuthService {
         try {
             if (stored == null || !stored.contains(":")) return false;
             String[] parts = stored.split(":", 2);
-
             byte[] salt = Base64.getDecoder().decode(parts[0]);
             byte[] expected = Base64.getDecoder().decode(parts[1]);
 
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(salt);
-
             byte[] actual = md.digest(password.getBytes(StandardCharsets.UTF_8));
-            if (actual.length != expected.length) return false;
 
+            if (actual.length != expected.length) return false;
             for (int i = 0; i < actual.length; i++) {
                 if (actual[i] != expected[i]) return false;
             }
             return true;
-
         } catch (Exception e) {
             return false;
         }

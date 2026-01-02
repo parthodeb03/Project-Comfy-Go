@@ -5,10 +5,6 @@ import java.sql.SQLException;
 
 /**
  * Manager Entity - Represents a Hotel Manager.
- *
- * Expected table columns (used by AuthService):
- * managers(managerid, managername, manageremail, managerphone, managernid, managerpassword,
- * hotelname, hotelnid, registrationnumber, status, ...)
  */
 public class Manager {
 
@@ -16,10 +12,7 @@ public class Manager {
     private String managerName;
     private String managerEmail;
     private String managerPhone;
-
-    // NEW
     private String managerNid;
-
     private String managerPassword;
     private String hotelName;
     private String hotelNID;
@@ -69,6 +62,7 @@ public class Manager {
     public void setStatus(String status) { this.status = status; }
 
     // -------------------- Optional DB helpers --------------------
+
     public boolean registerManager(Connection conn) {
         if (conn == null) return false;
 

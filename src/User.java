@@ -10,7 +10,7 @@ import java.sql.Types;
  *
  * DB table (expected):
  * users(userid, username, useremail, userpassword, userphone, usernid, passportno,
- *      dateofbirth, country, address, registrationdate)
+ * dateofbirth, country, address, registrationdate)
  */
 public class User {
 
@@ -21,7 +21,7 @@ public class User {
     private String userNID;
     private String passportNo;
     private String dateOfBirth; // YYYY-MM-DD
-    private String userPassword; // stored hashed in DB via AuthService, but kept here for optional direct insert
+    private String userPassword; // hashed in DB via AuthService (recommended)
     private String country;
     private String address;
     private String registrationDate; // optional read-only
@@ -95,7 +95,7 @@ public class User {
                 ps.setString(1, trimToNull(userID));
                 ps.setString(2, trimToNull(userName));
                 ps.setString(3, trimToNull(userEmail));
-                ps.setString(4, userPassword); // if using AuthService, this should already be hashed
+                ps.setString(4, userPassword);
                 ps.setString(5, trimToNull(userPhone));
                 ps.setString(6, trimToNull(userNID));
                 ps.setString(7, trimToNull(passportNo));
@@ -106,7 +106,6 @@ public class User {
 
                 ps.setString(9, trimToNull(country));
                 ps.setString(10, trimToNull(address));
-
                 return ps.executeUpdate() > 0;
             }
 
@@ -149,6 +148,7 @@ public class User {
 
     @Override
     public String toString() {
-        return "User{userID='" + userID + "', userName='" + userName + "', userEmail='" + userEmail + "', userType='" + userType + "'}";
+        return "User{userID='" + userID + "', userName='" + userName + "', userEmail='" + userEmail +
+                "', userType='" + userType + "'}";
     }
 }

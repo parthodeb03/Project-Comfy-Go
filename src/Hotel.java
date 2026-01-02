@@ -3,13 +3,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/**
- * Hotel Entity - matches `hotels` table columns used by HotelService.
- *
- * Expected columns:
- * hotels(hotelid, hotelname, hotellocation, hotelpricepernight, hotelrating,
- * roomavailability, roomcategory, totalrooms, hotelfeatures, hoteldescription, managerid, ...)
- */
 public class Hotel {
 
     private String hotelId;
@@ -21,10 +14,7 @@ public class Hotel {
     private String roomCategory;
     private int totalRooms;
     private String features;
-
-    // NEW
     private String description;
-
     private String managerId;
 
     public Hotel() {}
@@ -62,7 +52,7 @@ public class Hotel {
     public String getManagerId() { return managerId; }
     public void setManagerId(String managerId) { this.managerId = managerId; }
 
-    // -------------------- Optional DB helpers --------------------
+    // Optional DB helper
     public static Hotel getHotelById(String hotelId, Connection conn) {
         if (conn == null) return null;
         if (hotelId == null || hotelId.trim().isEmpty()) return null;
@@ -100,7 +90,7 @@ public class Hotel {
         String sql = "UPDATE hotels SET roomavailability = ? WHERE hotelid = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, newAvailability);
-            ps.setString(2, hotelId);
+            ps.setString(2, hotelId.trim());
             boolean ok = ps.executeUpdate() > 0;
             if (ok) this.roomAvailability = newAvailability;
             return ok;
@@ -117,7 +107,7 @@ public class Hotel {
         String sql = "UPDATE hotels SET hotelpricepernight = ? WHERE hotelid = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDouble(1, newPrice);
-            ps.setString(2, hotelId);
+            ps.setString(2, hotelId.trim());
             boolean ok = ps.executeUpdate() > 0;
             if (ok) this.pricePerNight = newPrice;
             return ok;

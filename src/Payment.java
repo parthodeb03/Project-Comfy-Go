@@ -5,7 +5,6 @@ import java.sql.SQLException;
 
 public class Payment {
 
-    // Only 2 statuses
     public static final String STATUS_COMPLETED = "COMPLETED";
     public static final String STATUS_CANCELLED = "CANCELLED";
 
@@ -47,7 +46,6 @@ public class Payment {
 
             if (isBlank(paymentStatus)) paymentStatus = STATUS_CANCELLED;
             paymentStatus = paymentStatus.trim().toUpperCase();
-
             if (!isAllowedStatus(paymentStatus)) {
                 System.out.println("Invalid payment status: " + paymentStatus);
                 return false;
@@ -74,7 +72,6 @@ public class Payment {
                 ps.setString(6, description);
                 return ps.executeUpdate() > 0;
             }
-
         } catch (SQLException e) {
             System.out.println("Payment create failed: " + e.getMessage());
             return false;
