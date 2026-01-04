@@ -1,7 +1,7 @@
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.sql.Connection;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class ComfyGoGUI extends JFrame {
 
@@ -35,6 +35,19 @@ public class ComfyGoGUI extends JFrame {
     public static final Color INK = new Color(30, 40, 35);
     public static final Color MUTED = new Color(90, 110, 100);
 
+    // Add these new modern colors after your existing color definitions
+public static final Color VIBRANT_BLUE = new Color(52, 152, 219);
+public static final Color VIBRANT_PURPLE = new Color(155, 89, 182);
+public static final Color VIBRANT_ORANGE = new Color(230, 126, 34);
+public static final Color VIBRANT_TEAL = new Color(26, 188, 156);
+public static final Color SOFT_RED = new Color(231, 76, 60);
+public static final Color GOLD = new Color(241, 196, 15);
+
+// Enhanced gradients
+public static final Color GRADIENT_START = new Color(46, 204, 113);
+public static final Color GRADIENT_END = new Color(52, 152, 219);
+
+
     // Keep old names (other files reference these)
     public static final Color PRIMARY = FOREST;
     public static final Color SECONDARY = new Color(45, 111, 87);
@@ -44,6 +57,44 @@ public class ComfyGoGUI extends JFrame {
     public static final Color DARK = INK;
     public static final Color LIGHT = BACKDROP;
     public static final Color WHITE = Color.WHITE;
+
+    public static JButton createModernButton(String text, Color bgColor, Color hoverColor) {
+    JButton btn = new JButton(text);
+    btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+    btn.setBackground(bgColor);
+    btn.setForeground(Color.WHITE);
+    btn.setFocusPainted(false);
+    btn.setBorder(BorderFactory.createEmptyBorder(12, 24, 12, 24));
+    btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    btn.setOpaque(true);
+    
+    // Add hover effect
+    btn.addMouseListener(new java.awt.event.MouseAdapter() {
+         public void mouseEntered(java.awt.event.MouseEvent evt) {
+            btn.setBackground(hoverColor);
+        }
+        public void mouseExited(java.awt.event.MouseEvent evt) {
+            btn.setBackground(bgColor);
+        }
+    });
+    
+    return btn;
+}
+
+public static JPanel createModernCard() {
+    JPanel p = new JPanel();
+    p.setBackground(SURFACE);
+    p.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createLineBorder(new Color(200, 220, 210), 1),
+        new EmptyBorder(20, 20, 20, 20)
+    ));
+    // Add shadow effect
+    p.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createMatteBorder(0, 0, 3, 3, new Color(0, 0, 0, 20)),
+        p.getBorder()
+    ));
+    return p;
+}
 
     public ComfyGoGUI() {
         setTitle("ComfyGo - Tourism Management System");
