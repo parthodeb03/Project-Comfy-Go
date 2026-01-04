@@ -1,275 +1,263 @@
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
 
 public class TransportService {
-
-    public static final String STATUS_ROUTE = "ROUTE";
-    public static final String STATUS_CONFIRMED = "CONFIRMED";
-    public static final String STATUS_CANCELLED = "CANCELLED";
-
     private final Connection conn;
 
     public TransportService(Connection conn) {
         this.conn = conn;
-        ensureSeedRoutes();
     }
 
-    public boolean bookTransport(
-            String userId,
-            String transportType,
-            String departureLocation,
-            String arrivalLocation,
-            String departureDate,
-            String issueDate,
-            int passengers,
-            String seatNumber,
-            double fare,
-            String vehicleRegNo,
-            String vehicleCompany
-    ) {
-        if (conn == null) return false;
-
-        if (isBlank(userId)) {
-            System.out.println("User ID is required!");
-            return false;
-        }
-
-        if (isBlank(transportType)) {
-            System.out.println("Transport type is required!");
-            return false;
-        }
-
-        if (isBlank(departureLocation) || isBlank(arrivalLocation)) {
-            System.out.println("Departure and arrival locations are required!");
-            return false;
-        }
-
-        if (passengers < 1) {
-            System.out.println("At least 1 passenger required!");
-            return false;
-        }
-
-        if (fare <= 0) {
-            System.out.println("Invalid fare amount!");
-            return false;
-        }
-
-        try {
-            String ticketId = IdGenerator.uniqueNumericId(conn, "transportbooking", "ticketid", 12, 60);
-
-            String sql =
-                    "INSERT INTO transportbooking " +
-                    "(ticketid, userid, transporttype, departurelocation, arrivallocation, " +
-                    " departuredate, issuedate, numberofpassengers, seatnumber, bookingstatus, " +
-                    " fare, vehicleregistration, vehiclecompany) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, ticketId);
-                ps.setString(2, userId.trim());
-                ps.setString(3, normalizeType(transportType));
-                ps.setString(4, departureLocation.trim());
-                ps.setString(5, arrivalLocation.trim());
-                ps.setDate(6, Date.valueOf(departureDate.trim()));
-                ps.setDate(7, Date.valueOf(issueDate.trim()));
-                ps.setInt(8, passengers);
-                ps.setString(9, isBlank(seatNumber) ? "NA" : seatNumber.trim());
-                ps.setString(10, STATUS_CONFIRMED);
-                ps.setDouble(11, fare);
-                ps.setString(12, isBlank(vehicleRegNo) ? "NA" : vehicleRegNo.trim());
-                ps.setString(13, isBlank(vehicleCompany) ? "NA" : vehicleCompany.trim());
-
-                int rows = ps.executeUpdate();
-                if (rows > 0) {
-                    System.out.println("Transport booking successful!");
-                    System.out.println("Ticket ID: " + ticketId);
-                    return true;
-                }
-
-                System.out.println("Failed to create booking!");
-                return false;
-            }
-
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid date format (use YYYY-MM-DD).");
-            return false;
-        } catch (Exception e) {
-            System.out.println("Booking failed: " + e.getMessage());
-            return false;
-        }
-    }
-
-    /** Routes are stored as rows with userid IS NULL and bookingstatus=ROUTE (seeded). */
+    /**
+     * Get all available routes from database
+     */
     public List<String> getAllRoutes() {
         List<String> routes = new ArrayList<>();
-        if (conn == null) return routes;
-
-        String sql =
-                "SELECT transporttype, departurelocation, arrivallocation, vehiclecompany, fare " +
-                "FROM transportbooking " +
-                "WHERE bookingstatus = ? AND userid IS NULL " +
-                "ORDER BY transporttype, departurelocation, arrivallocation";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, STATUS_ROUTE);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    routes.add(
-                            rs.getString("transporttype") + " | " +
-                            rs.getString("departurelocation") + " -> " +
-                            rs.getString("arrivallocation") + " | " +
-                            rs.getString("vehiclecompany") + " | BDT " +
-                            rs.getDouble("fare")
-                    );
-                }
+        String sql = "SELECT transporttype, departurelocation, arrivallocation, " +
+                     "estimatedduration, fare FROM transport ORDER BY transporttype";
+        
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                String route = String.format("%s: %s -> %s | %s | BDT %.2f",
+                    rs.getString("transporttype"),
+                    rs.getString("departurelocation"),
+                    rs.getString("arrivallocation"),
+                    rs.getString("estimatedduration"),
+                    rs.getDouble("fare"));
+                routes.add(route);
             }
         } catch (SQLException e) {
-            System.out.println("Route fetch failed: " + e.getMessage());
+            System.out.println("Error fetching routes: " + e.getMessage());
         }
-
+        
         return routes;
     }
 
-    public void displayAvailableRoutes() {
-        List<String> routes = getAllRoutes();
-        System.out.println("\n" + "=".repeat(80));
-        System.out.println("AVAILABLE ROUTES");
-        System.out.println("=".repeat(80));
-        if (routes.isEmpty()) System.out.println("No routes available.");
-        else for (String r : routes) System.out.println(r);
-        System.out.println("=".repeat(80));
-    }
-
-    public List<String> getUserTransportBookings(String userId) {
-        List<String> bookings = new ArrayList<>();
-        if (conn == null) return bookings;
-        if (isBlank(userId)) return bookings;
-
-        String sql =
-                "SELECT ticketid, transporttype, departurelocation, arrivallocation, departuredate, issuedate, " +
-                "numberofpassengers, fare, bookingstatus " +
-                "FROM transportbooking WHERE userid = ? ORDER BY ticketid DESC";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId.trim());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    int pax = rs.getInt("numberofpassengers");
-                    double perFare = rs.getDouble("fare");
-
-                    bookings.add(
-                            "[" + rs.getString("ticketid") + "] " +
-                            rs.getString("transporttype") + " | " +
-                            rs.getString("departurelocation") + " -> " + rs.getString("arrivallocation") + " | " +
-                            "Dep: " + rs.getDate("departuredate") + " | " +
-                            "Issue: " + rs.getDate("issuedate") + " | " +
-                            "Pax: " + pax + " | " +
-                            "Total: BDT " + (perFare * pax) + " | " +
-                            rs.getString("bookingstatus")
-                    );
+    /**
+     * Get all unique locations (departure and arrival)
+     */
+    public List<String> getAllLocations() {
+        List<String> locations = new ArrayList<>();
+        Set<String> uniqueLocations = new TreeSet<>(); // TreeSet for sorted, unique values
+        
+        String sql = "SELECT DISTINCT departurelocation FROM transport " +
+                     "UNION SELECT DISTINCT arrivallocation FROM transport";
+        
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                String loc = rs.getString(1);
+                if (loc != null && !loc.trim().isEmpty()) {
+                    uniqueLocations.add(loc.trim());
                 }
             }
         } catch (SQLException e) {
-            System.out.println("Transport booking fetch failed: " + e.getMessage());
+            System.out.println("Error fetching locations: " + e.getMessage());
         }
-
-        return bookings;
+        
+        locations.addAll(uniqueLocations);
+        return locations;
     }
 
-    public boolean cancelTicket(String userId, String ticketId) {
-        if (conn == null) return false;
-        if (isBlank(userId) || isBlank(ticketId)) return false;
+    /**
+     * Inner class to hold parsed route information
+     */
+    public static class RouteInfo {
+        public String duration;
+        public double fare;
+        
+        public RouteInfo(String duration, double fare) {
+            this.duration = duration;
+            this.fare = fare;
+        }
+    }
 
-        String sql = "UPDATE transportbooking SET bookingstatus = ? WHERE ticketid = ? AND userid = ?";
+    /**
+     * Parse route string to extract duration and fare
+     * Route format: "Bus: Dhaka -> Sylhet | 6 hours | BDT 800.0"
+     */
+    public RouteInfo parseRoute(String route) {
+        try {
+            String[] parts = route.split("\\|");
+            if (parts.length >= 3) {
+                String duration = parts[1].trim();
+                String fareStr = parts[2].trim().replaceAll("[^0-9.]", "");
+                double fare = Double.parseDouble(fareStr);
+                return new RouteInfo(duration, fare);
+            }
+        } catch (Exception e) {
+            System.out.println("Error parsing route: " + e.getMessage());
+        }
+        return new RouteInfo("Unknown", 500.0);
+    }
 
+    /**
+     * Get available seats for a specific route
+     */
+    public int getAvailableSeats(String type, String from, String to, String date) {
+        String sql = "SELECT availableseats FROM transport " +
+                     "WHERE transporttype = ? AND departurelocation = ? AND arrivallocation = ?";
+        
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, STATUS_CANCELLED);
-            ps.setString(2, ticketId.trim());
-            ps.setString(3, userId.trim());
-
-            boolean ok = ps.executeUpdate() > 0;
-            if (ok) System.out.println("Ticket cancelled successfully!");
-            else System.out.println("Ticket not found / cannot cancel!");
-            return ok;
-
+            ps.setString(1, type);
+            ps.setString(2, from);
+            ps.setString(3, to);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("availableseats");
+                }
+            }
         } catch (SQLException e) {
-            System.out.println("Cancel failed: " + e.getMessage());
+            System.out.println("Error checking seats: " + e.getMessage());
+        }
+        
+        // Default return if not found or error
+        return 25;
+    }
+
+    /**
+     * Book transport with return trip support
+     * @param userId - User ID
+     * @param transportType - Type (Bus, Train, Air, Launch)
+     * @param from - Departure location
+     * @param to - Arrival location
+     * @param date - Departure date (YYYY-MM-DD)
+     * @param bookingTime - Booking timestamp
+     * @param passengers - Number of passengers
+     * @param seatNumbers - Seat numbers
+     * @param fare - Total fare
+     * @param ticketClass - Ticket class
+     * @param provider - Provider name
+     * @param isReturn - Is return trip
+     * @param returnDate - Return date (YYYY-MM-DD)
+     * @return true if booking successful
+     */
+    public boolean bookTransport(String userId, String transportType, String from, String to,
+                                 String date, String bookingTime, int passengers, String seatNumbers,
+                                 double fare, String ticketClass, String provider,
+                                 boolean isReturn, String returnDate) {
+        if (userId == null || userId.trim().isEmpty()) {
+            System.out.println("User ID required!");
+            return false;
+        }
+        
+        try {
+            String ticketId = IdGenerator.uniqueNumericId(conn, "transportbooking", "ticketid", 12, 60);
+            
+            String sql = "INSERT INTO transportbooking (ticketid, userid, transporttype, " +
+                        "departurelocation, arrivallocation, departuredate, numberofpassengers, " +
+                        "seatnumbers, fare, ticketclass, providername, bookingstatus) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED')";
+            
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, ticketId);
+                ps.setString(2, userId.trim());
+                ps.setString(3, transportType);
+                ps.setString(4, from);
+                ps.setString(5, to);
+                ps.setDate(6, java.sql.Date.valueOf(date));  // FIXED: Use java.sql.Date.valueOf()
+                ps.setInt(7, passengers);
+                ps.setString(8, seatNumbers);
+                ps.setDouble(9, fare);
+                ps.setString(10, ticketClass);
+                ps.setString(11, provider);
+                
+                int rows = ps.executeUpdate();
+                
+                // If return trip, create another booking for return
+                if (isReturn && returnDate != null && !returnDate.trim().isEmpty()) {
+                    String returnTicketId = IdGenerator.uniqueNumericId(conn, "transportbooking", "ticketid", 12, 60);
+                    try (PreparedStatement psReturn = conn.prepareStatement(sql)) {
+                        psReturn.setString(1, returnTicketId);
+                        psReturn.setString(2, userId.trim());
+                        psReturn.setString(3, transportType);
+                        psReturn.setString(4, to); // Swapped: return from destination
+                        psReturn.setString(5, from); // Swapped: return to origin
+                        psReturn.setDate(6, java.sql.Date.valueOf(returnDate));  // FIXED: Use java.sql.Date.valueOf()
+                        psReturn.setInt(7, passengers);
+                        psReturn.setString(8, seatNumbers);
+                        psReturn.setDouble(9, fare / 2); // Half fare for each leg
+                        psReturn.setString(10, ticketClass);
+                        psReturn.setString(11, provider);
+                        psReturn.executeUpdate();
+                        System.out.println("Return trip booked! Ticket ID: " + returnTicketId);
+                    }
+                }
+                
+                System.out.println("Transport booking successful! Ticket ID: " + ticketId);
+                return rows > 0;
+            }
+        } catch (SQLException e) {
+            System.out.println("Booking failed: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
 
-    // -------------------- seed routes --------------------
-
-    private void ensureSeedRoutes() {
-        if (conn == null) return;
-
-        try {
-            String check = "SELECT COUNT(*) AS cnt FROM transportbooking WHERE userid IS NULL AND bookingstatus = ?";
-            try (PreparedStatement ps = conn.prepareStatement(check)) {
-                ps.setString(1, STATUS_ROUTE);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next() && rs.getInt("cnt") > 0) return;
+    /**
+     * Search transport by type and route
+     */
+    public List<String> searchTransport(String type, String from, String to) {
+        List<String> results = new ArrayList<>();
+        String sql = "SELECT transporttype, departurelocation, arrivallocation, " +
+                     "estimatedduration, fare FROM transport " +
+                     "WHERE transporttype = ? AND departurelocation = ? AND arrivallocation = ?";
+        
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, type);
+            ps.setString(2, from);
+            ps.setString(3, to);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String route = String.format("%s: %s -> %s | %s | BDT %.2f",
+                        rs.getString("transporttype"),
+                        rs.getString("departurelocation"),
+                        rs.getString("arrivallocation"),
+                        rs.getString("estimatedduration"),
+                        rs.getDouble("fare"));
+                    results.add(route);
                 }
             }
-
-            seedMinimalRoutes();
-
         } catch (SQLException e) {
-            System.out.println("Route seed check failed: " + e.getMessage());
+            System.out.println("Search failed: " + e.getMessage());
         }
+        
+        return results;
     }
 
-    private void seedMinimalRoutes() throws SQLException {
-        LocalDate d = LocalDate.now();
-        insertRoute("Bus", "Dhaka", "Chattogram", "Hanif Enterprise", d, 450);
-        insertRoute("Bus", "Chattogram", "Dhaka", "Hanif Enterprise", d, 450);
-        insertRoute("Train", "Dhaka", "Sylhet", "Bangladesh Railway", d, 600);
-        insertRoute("Train", "Sylhet", "Dhaka", "Bangladesh Railway", d, 600);
-    }
-
-    private void insertRoute(String type, String from, String to, String company, LocalDate d, double fare)
-            throws SQLException {
-
-        String ticketId = IdGenerator.uniqueNumericId(conn, "transportbooking", "ticketid", 12, 60);
-
-        String sql =
-                "INSERT INTO transportbooking " +
-                "(ticketid, userid, transporttype, departurelocation, arrivallocation, " +
-                " departuredate, issuedate, numberofpassengers, seatnumber, bookingstatus, " +
-                " fare, vehicleregistration, vehiclecompany) " +
-                "VALUES (?, NULL, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'NA', ?)";
-
+    /**
+     * Get user's transport bookings
+     */
+    public List<Map<String, Object>> getUserBookings(String userId) {
+        List<Map<String, Object>> bookings = new ArrayList<>();
+        String sql = "SELECT ticketid, transporttype, departurelocation, arrivallocation, " +
+                     "departuredate, numberofpassengers, fare, bookingstatus " +
+                     "FROM transportbooking WHERE userid = ? ORDER BY departuredate DESC";
+        
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, ticketId);
-            ps.setString(2, normalizeType(type));
-            ps.setString(3, from);
-            ps.setString(4, to);
-            ps.setDate(5, Date.valueOf(d));
-            ps.setDate(6, Date.valueOf(d));
-            ps.setString(7, "R-" + ticketId.substring(Math.max(0, ticketId.length() - 4)));
-            ps.setString(8, STATUS_ROUTE);
-            ps.setDouble(9, fare);
-            ps.setString(10, company);
-            ps.executeUpdate();
+            ps.setString(1, userId);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> booking = new HashMap<>();
+                    booking.put("ticketId", rs.getString("ticketid"));
+                    booking.put("type", rs.getString("transporttype"));
+                    booking.put("from", rs.getString("departurelocation"));
+                    booking.put("to", rs.getString("arrivallocation"));
+                    booking.put("date", rs.getDate("departuredate"));
+                    booking.put("passengers", rs.getInt("numberofpassengers"));
+                    booking.put("fare", rs.getDouble("fare"));
+                    booking.put("status", rs.getString("bookingstatus"));
+                    bookings.add(booking);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching bookings: " + e.getMessage());
         }
-    }
-
-    private String normalizeType(String t) {
-        String x = (t == null) ? "" : t.trim();
-        if (x.equalsIgnoreCase("bus")) return "Bus";
-        if (x.equalsIgnoreCase("train")) return "Train";
-        if (x.equalsIgnoreCase("air") || x.equalsIgnoreCase("flight")) return "Air";
-        if (x.equalsIgnoreCase("launch")) return "Launch";
-        return x;
-    }
-
-    private static boolean isBlank(String s) {
-        return s == null || s.trim().isEmpty();
+        
+        return bookings;
     }
 }

@@ -11,9 +11,9 @@ import java.util.List;
  * GuideService
  * - Listing/searching guides
  * - Hiring a guide (creates a guidebooking row)
- * - Guide-side booking management (view + update tour/payment status)
- *
- * Tables used (from comfygo.sql):
+ * - Guide-side booking management (view & update tour/payment status)
+ * 
+ * Tables used from comfygo.sql:
  * - guides
  * - guidebooking
  * - users (for tourist name in views)
@@ -37,7 +37,8 @@ public class GuideService {
         this.conn = conn;
     }
 
-    // ===================== Public DTO =====================
+    // -------------------- Public DTO --------------------
+
     public static class GuideBookingInfo {
         private String bookingId;
         private String userId;
@@ -66,13 +67,17 @@ public class GuideService {
         public String getSpecialRequest() { return specialRequest; }
     }
 
-    // ===================== Tourist: Guide browse/search =====================
+    // -------------------- Tourist: Guide browse/search --------------------
+
     public List<Guide> getAvailableGuides() {
         List<Guide> guides = new ArrayList<>();
-        String sql = "SELECT * FROM guides WHERE isavailable = TRUE AND status = 'ACTIVE' ORDER BY rating DESC";
+        String sql = "SELECT * FROM guides WHERE isavailable = TRUE AND status = 'ACTIVE' " +
+                     "ORDER BY rating DESC";
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) guides.add(mapGuide(rs));
+            while (rs.next()) {
+                guides.add(mapGuide(rs));
+            }
         } catch (SQLException e) {
             System.out.println("Failed to fetch guides: " + e.getMessage());
         }
@@ -81,14 +86,14 @@ public class GuideService {
 
     public List<Guide> searchGuidesByDivision(String division) {
         List<Guide> guides = new ArrayList<>();
-        String sql =
-                "SELECT * FROM guides " +
-                "WHERE guidedivision = ? AND isavailable = TRUE AND status = 'ACTIVE' " +
-                "ORDER BY rating DESC";
+        String sql = "SELECT * FROM guides WHERE guidedivision = ? " +
+                     "AND isavailable = TRUE AND status = 'ACTIVE' ORDER BY rating DESC";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, normalize(division));
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) guides.add(mapGuide(rs));
+                while (rs.next()) {
+                    guides.add(mapGuide(rs));
+                }
             }
         } catch (SQLException e) {
             System.out.println("Search failed: " + e.getMessage());
@@ -98,14 +103,14 @@ public class GuideService {
 
     public List<Guide> searchGuidesBySpecialization(String specialization) {
         List<Guide> guides = new ArrayList<>();
-        String sql =
-                "SELECT * FROM guides " +
-                "WHERE specialization LIKE ? AND isavailable = TRUE AND status = 'ACTIVE' " +
-                "ORDER BY rating DESC";
+        String sql = "SELECT * FROM guides WHERE specialization LIKE ? " +
+                     "AND isavailable = TRUE AND status = 'ACTIVE' ORDER BY rating DESC";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, "%" + normalize(specialization) + "%");
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) guides.add(mapGuide(rs));
+                while (rs.next()) {
+                    guides.add(mapGuide(rs));
+                }
             }
         } catch (SQLException e) {
             System.out.println("Search failed: " + e.getMessage());
@@ -115,11 +120,14 @@ public class GuideService {
 
     public Guide getGuideById(String guideId) {
         if (isBlank(guideId)) return null;
+
         String sql = "SELECT * FROM guides WHERE guideid = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, guideId.trim());
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapGuide(rs);
+                if (rs.next()) {
+                    return mapGuide(rs);
+                }
             }
         } catch (SQLException e) {
             System.out.println("Guide fetch failed: " + e.getMessage());
@@ -127,11 +135,12 @@ public class GuideService {
         return null;
     }
 
-    // ===================== Tourist: Hire guide =====================
+    // -------------------- Tourist: Hire guide --------------------
+
     /**
      * Creates a row in guidebooking.
-     * Payment is tracked inside guidebooking.paymentstatus (per your schema),
-     * so this method sets it to PENDING; you can later mark it COMPLETED/FAILED.
+     * Payment is tracked inside guidebooking.paymentstatus per your schema,
+     * so this method sets it to PENDING (you can later mark it COMPLETED/FAILED).
      */
     public boolean hireGuide(String userId, String guideId, String location, int days, String purpose) {
         if (isBlank(userId)) {
@@ -178,10 +187,11 @@ public class GuideService {
             oldAutoCommit = conn.getAutoCommit();
             conn.setAutoCommit(false);
 
-            String sql =
-                    "INSERT INTO guidebooking " +
-                    "(bookingid, userid, guideid, tourdurationdays, tourpurpose, tourlocation, tourstatus, guidefee, paymentstatus) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO guidebooking " +
+                         "(bookingid, userid, guideid, tourdurationdays, tourpurpose, tourlocation, " +
+                         " tourstatus, guidefee, paymentstatus) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, bookingId);
                 ps.setString(2, userId.trim());
@@ -199,7 +209,6 @@ public class GuideService {
             setGuideAvailabilityInternal(guideId, false);
 
             conn.commit();
-
             System.out.println("Guide hiring request created!");
             System.out.println("Booking ID: " + bookingId);
             System.out.println("Estimated fee: BDT " + guideFee + " (" + days + " days @ BDT " + dailyFee + "/day)");
@@ -215,7 +224,34 @@ public class GuideService {
         }
     }
 
-    // ===================== Guide: Availability =====================
+    /**
+     * NEW METHOD: Book guide with payment validation
+     */
+    public boolean bookGuideWithPayment(String userId, String guideId, String location,
+                                        int duration, String startDate, double totalFee,
+                                        String paymentMethod, double paymentAmount) {
+        // Validate payment amount
+        if (paymentAmount < totalFee) {
+            System.out.println("Payment amount insufficient! Required: BDT " + totalFee +
+                             ", Provided: BDT " + paymentAmount);
+            return false;
+        }
+
+        // Use the existing hireGuide method which creates the booking
+        boolean success = hireGuide(userId, guideId, location, duration,
+                                   "Booking starting " + startDate + " via " + paymentMethod);
+
+        if (success) {
+            System.out.println("Payment processed: " + paymentMethod + " - BDT " + paymentAmount);
+            System.out.println("Tour start date: " + startDate);
+            System.out.println("Booking confirmed for " + duration + " days at " + location);
+        }
+
+        return success;
+    }
+
+    // -------------------- Guide Availability --------------------
+
     /**
      * Safer availability update:
      * - Prevents setting available=TRUE if guide still has PENDING/CONFIRMED tours.
@@ -231,18 +267,19 @@ public class GuideService {
         return setGuideAvailabilityInternal(guideId, isAvailable);
     }
 
-    // ===================== Guide: View bookings =====================
+    // -------------------- Guide: View bookings --------------------
+
     public List<GuideBookingInfo> getBookingsForGuide(String guideId) {
         List<GuideBookingInfo> list = new ArrayList<>();
         if (isBlank(guideId)) return list;
 
-        String sql =
-                "SELECT gb.bookingid, gb.userid, u.username AS touristname, gb.guideid, gb.bookingdate, " +
-                "gb.tourdurationdays, gb.tourpurpose, gb.tourlocation, gb.tourstatus, gb.guidefee, gb.paymentstatus, gb.specialrequest " +
-                "FROM guidebooking gb " +
-                "LEFT JOIN users u ON gb.userid = u.userid " +
-                "WHERE gb.guideid = ? " +
-                "ORDER BY gb.bookingdate DESC";
+        String sql = "SELECT gb.bookingid, gb.userid, u.username AS touristname, gb.guideid, " +
+                     "       gb.bookingdate, gb.tourdurationdays, gb.tourpurpose, gb.tourlocation, " +
+                     "       gb.tourstatus, gb.guidefee, gb.paymentstatus, gb.specialrequest " +
+                     "FROM guidebooking gb " +
+                     "LEFT JOIN users u ON gb.userid = u.userid " +
+                     "WHERE gb.guideid = ? " +
+                     "ORDER BY gb.bookingdate DESC";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, guideId.trim());
@@ -267,30 +304,27 @@ public class GuideService {
         } catch (SQLException e) {
             System.out.println("Failed to fetch guide bookings: " + e.getMessage());
         }
-
         return list;
     }
 
     public void displayGuideBookings(String guideId) {
         List<GuideBookingInfo> list = getBookingsForGuide(guideId);
-
-        System.out.println("\n" + "=".repeat(110));
+        System.out.println("=".repeat(110));
         System.out.println("MY GUIDE BOOKINGS");
         System.out.println("=".repeat(110));
-
         if (list.isEmpty()) {
             System.out.println("No guide bookings found!");
             System.out.println("=".repeat(110));
             return;
         }
 
-        System.out.printf("%-3s | %-12s | %-18s | %-10s | %-10s | %-14s | %-10s | %-12s%n",
+        System.out.printf("%-3s %-12s %-18s %-10s %-10s %-14s %-10s %-12s\n",
                 "No", "BookingID", "Tourist", "Days", "Fee(BDT)", "TourStatus", "Payment", "Location");
         System.out.println("-".repeat(110));
 
         int i = 1;
         for (GuideBookingInfo b : list) {
-            System.out.printf("%-3d | %-12s | %-18s | %-10d | %-10.0f | %-14s | %-10s | %-12s%n",
+            System.out.printf("%-3d %-12s %-18s %-10d %-10.0f %-14s %-10s %-12s\n",
                     i++,
                     safe(b.getBookingId()),
                     truncate(safe(b.getTouristName()), 18),
@@ -298,23 +332,21 @@ public class GuideService {
                     b.getGuideFee(),
                     safe(b.getTourStatus()),
                     safe(b.getPaymentStatus()),
-                    truncate(safe(b.getTourLocation()), 12)
-            );
+                    truncate(safe(b.getTourLocation()), 12));
         }
-
         System.out.println("=".repeat(110));
     }
 
-    // ===================== Guide: Manage bookings =====================
+    // -------------------- Guide: Manage bookings --------------------
+
     /**
      * Allowed transitions (basic rules):
-     * - PENDING -> CONFIRMED / REJECTED / CANCELLED
-     * - CONFIRMED -> COMPLETED / CANCELLED
-     * (Other transitions rejected)
+     * - PENDING  -> CONFIRMED, REJECTED, CANCELLED
+     * - CONFIRMED -> COMPLETED, CANCELLED
+     * Other transitions rejected.
      */
     public boolean updateTourStatusForGuide(String guideId, String bookingId, String newStatus) {
         if (isBlank(guideId) || isBlank(bookingId) || isBlank(newStatus)) return false;
-
         newStatus = newStatus.trim().toUpperCase();
 
         boolean oldAutoCommit = true;
@@ -340,20 +372,20 @@ public class GuideService {
                 ps.setString(1, newStatus);
                 ps.setString(2, bookingId.trim());
                 ps.setString(3, guideId.trim());
-                if (ps.executeUpdate() <= 0) {
+                if (ps.executeUpdate() == 0) {
                     conn.rollback();
                     System.out.println("Failed to update tour status!");
                     return false;
                 }
             }
 
-            // If no more active tours after completion/cancel/reject, allow guide to become available again
+            // If no more active tours after complete/cancel/reject, allow guide to become available again
             if (!hasActiveTours(guideId)) {
                 setGuideAvailabilityInternal(guideId, true);
             }
 
             conn.commit();
-            System.out.println("Tour status updated to " + newStatus);
+            System.out.println("Tour status updated to: " + newStatus);
             return true;
 
         } catch (SQLException e) {
@@ -383,7 +415,9 @@ public class GuideService {
             ps.setString(2, bookingId.trim());
             ps.setString(3, guideId.trim());
             boolean ok = ps.executeUpdate() > 0;
-            if (ok) System.out.println("Payment status updated to " + newPaymentStatus);
+            if (ok) {
+                System.out.println("Payment status updated to: " + newPaymentStatus);
+            }
             return ok;
         } catch (SQLException e) {
             System.out.println("Payment status update failed: " + e.getMessage());
@@ -391,16 +425,15 @@ public class GuideService {
         }
     }
 
-    // ===================== UI helpers =====================
+    // -------------------- UI helpers --------------------
+
     public void displayGuideInfo(Guide guide) {
         if (guide == null) {
             System.out.println("Guide not found!");
             return;
         }
-
         double dailyFee = calculateDailyFee(guide);
-
-        System.out.println("\n" + "=".repeat(60));
+        System.out.println("=".repeat(60));
         System.out.println("GUIDE PROFILE");
         System.out.println("=".repeat(60));
         System.out.println("Name: " + safe(guide.getGuideName()));
@@ -417,7 +450,8 @@ public class GuideService {
         System.out.println("=".repeat(60));
     }
 
-    // ===================== Internal helpers =====================
+    // -------------------- Internal helpers --------------------
+
     private Guide mapGuide(ResultSet rs) throws SQLException {
         Guide guide = new Guide();
         guide.setGuideId(rs.getString("guideid"));
@@ -442,7 +476,9 @@ public class GuideService {
             ps.setBoolean(1, isAvailable);
             ps.setString(2, guideId.trim());
             boolean ok = ps.executeUpdate() > 0;
-            if (ok) System.out.println("Availability updated to " + (isAvailable ? "AVAILABLE" : "NOT AVAILABLE"));
+            if (ok) {
+                System.out.println("Availability updated to: " + (isAvailable ? "AVAILABLE" : "NOT AVAILABLE"));
+            }
             return ok;
         } catch (SQLException e) {
             System.out.println("Availability update failed: " + e.getMessage());
@@ -451,10 +487,8 @@ public class GuideService {
     }
 
     private boolean hasActiveTours(String guideId) {
-        String sql =
-                "SELECT 1 FROM guidebooking " +
-                "WHERE guideid = ? AND tourstatus IN ('PENDING', 'CONFIRMED') " +
-                "LIMIT 1";
+        String sql = "SELECT 1 FROM guidebooking WHERE guideid = ? " +
+                     "AND tourstatus IN ('PENDING', 'CONFIRMED') LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, guideId.trim());
             try (ResultSet rs = ps.executeQuery()) {
@@ -472,7 +506,9 @@ public class GuideService {
             ps.setString(1, bookingId.trim());
             ps.setString(2, guideId.trim());
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getString("tourstatus");
+                if (rs.next()) {
+                    return rs.getString("tourstatus");
+                }
             }
         }
         return null;
@@ -482,12 +518,16 @@ public class GuideService {
         if (from == null || to == null) return false;
         from = from.trim().toUpperCase();
         to = to.trim().toUpperCase();
-
         if (from.equals(to)) return true;
 
         return switch (from) {
-            case TOUR_STATUS_PENDING -> to.equals(TOUR_STATUS_CONFIRMED) || to.equals(TOUR_STATUS_REJECTED) || to.equals(TOUR_STATUS_CANCELLED);
-            case TOUR_STATUS_CONFIRMED -> to.equals(TOUR_STATUS_COMPLETED) || to.equals(TOUR_STATUS_CANCELLED);
+            case TOUR_STATUS_PENDING ->
+                to.equals(TOUR_STATUS_CONFIRMED) ||
+                to.equals(TOUR_STATUS_REJECTED) ||
+                to.equals(TOUR_STATUS_CANCELLED);
+            case TOUR_STATUS_CONFIRMED ->
+                to.equals(TOUR_STATUS_COMPLETED) ||
+                to.equals(TOUR_STATUS_CANCELLED);
             default -> false;
         };
     }
@@ -502,10 +542,15 @@ public class GuideService {
         double base = 2500.0;
 
         String spec = safe(g.getSpecialization()).toLowerCase();
-        if (spec.contains("adventure")) base += 800;
-        else if (spec.contains("history")) base += 500;
-        else if (spec.contains("nature")) base += 400;
-        else if (spec.contains("beach")) base += 300;
+        if (spec.contains("adventure")) {
+            base += 800;
+        } else if (spec.contains("history")) {
+            base += 500;
+        } else if (spec.contains("nature")) {
+            base += 400;
+        } else if (spec.contains("beach")) {
+            base += 300;
+        }
 
         int exp = Math.max(0, g.getYearExperience());
         base += Math.min(2000.0, exp * 150.0); // cap experience premium
@@ -537,7 +582,7 @@ public class GuideService {
 
     private static String truncate(String s, int max) {
         if (s == null) return "";
-        if (max <= 3) return s.length() <= max ? s : s.substring(0, max);
-        return s.length() <= max ? s : s.substring(0, max - 3) + "...";
+        if (max < 3) return s.length() > max ? s : s.substring(0, max);
+        return s.length() > max ? s.substring(0, max - 3) + "..." : s;
     }
 }

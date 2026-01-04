@@ -128,4 +128,22 @@ public class Hotel {
                 ", roomAvailability=" + roomAvailability +
                 '}';
     }
+
+    public String getAmenities() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAmenities'");
+    }
+
+    public class Room {
+
+        public String getRoomType() {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'getRoomType'");
+        }
+
+        public Object getPricePerNight() {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'getPricePerNight'");
+        }
+    }
 }

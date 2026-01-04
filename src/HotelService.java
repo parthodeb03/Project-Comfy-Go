@@ -827,4 +827,9 @@ public class HotelService {
         if (max <= 3) return s.length() <= max ? s : s.substring(0, max);
         return s.length() <= max ? s : s.substring(0, max - 3) + "...";
     }
+
+    public List<Hotel.Room> getAvailableRoomCount(String hotelId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAvailableRoomCount'");
+    }
 }

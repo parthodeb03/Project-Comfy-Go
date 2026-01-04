@@ -3,11 +3,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/**
- * Guide Entity - matches `guides` table used by AuthService/GuideService.
- */
 public class Guide {
-
     private String guideId;
     private String guideName;
     private String guideEmail;
@@ -37,50 +33,150 @@ public class Guide {
         this.guideEmail = guideEmail;
     }
 
-    public String getGuideId() { return guideId; }
-    public void setGuideId(String guideId) { this.guideId = guideId; }
+    // Getters and Setters
+    public String getGuideId() {
+        return guideId;
+    }
 
-    public String getGuideName() { return guideName; }
-    public void setGuideName(String guideName) { this.guideName = guideName; }
+    public void setGuideId(String guideId) {
+        this.guideId = guideId;
+    }
 
-    public String getGuideEmail() { return guideEmail; }
-    public void setGuideEmail(String guideEmail) { this.guideEmail = guideEmail; }
+    public String getGuideName() {
+        return guideName;
+    }
 
-    public String getGuidePhone() { return guidePhone; }
-    public void setGuidePhone(String guidePhone) { this.guidePhone = guidePhone; }
+    public void setGuideName(String guideName) {
+        this.guideName = guideName;
+    }
 
-    public String getGuidePassword() { return guidePassword; }
-    public void setGuidePassword(String guidePassword) { this.guidePassword = guidePassword; }
+    public String getGuideEmail() {
+        return guideEmail;
+    }
 
-    public String getGuideDivision() { return guideDivision; }
-    public void setGuideDivision(String guideDivision) { this.guideDivision = guideDivision; }
+    public void setGuideEmail(String guideEmail) {
+        this.guideEmail = guideEmail;
+    }
 
-    public String getGuideDistrict() { return guideDistrict; }
-    public void setGuideDistrict(String guideDistrict) { this.guideDistrict = guideDistrict; }
+    public String getGuidePhone() {
+        return guidePhone;
+    }
 
-    public String getGuideLanguage() { return guideLanguage; }
-    public void setGuideLanguage(String guideLanguage) { this.guideLanguage = guideLanguage; }
+    public void setGuidePhone(String guidePhone) {
+        this.guidePhone = guidePhone;
+    }
 
-    public String getSpecialization() { return specialization; }
-    public void setSpecialization(String specialization) { this.specialization = specialization; }
+    public String getGuidePassword() {
+        return guidePassword;
+    }
 
-    public double getRating() { return rating; }
-    public void setRating(double rating) { this.rating = rating; }
+    public void setGuidePassword(String guidePassword) {
+        this.guidePassword = guidePassword;
+    }
 
-    public int getTotalRatings() { return totalRatings; }
-    public void setTotalRatings(int totalRatings) { this.totalRatings = totalRatings; }
+    public String getGuideDivision() {
+        return guideDivision;
+    }
 
-    public boolean isAvailable() { return isAvailable; }
-    public void setAvailable(boolean available) { isAvailable = available; }
+    public void setGuideDivision(String guideDivision) {
+        this.guideDivision = guideDivision;
+    }
 
-    public int getYearExperience() { return yearExperience; }
-    public void setYearExperience(int yearExperience) { this.yearExperience = yearExperience; }
+    public String getGuideDistrict() {
+        return guideDistrict;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setGuideDistrict(String guideDistrict) {
+        this.guideDistrict = guideDistrict;
+    }
+
+    public String getGuideLanguage() {
+        return guideLanguage;
+    }
+
+    public void setGuideLanguage(String guideLanguage) {
+        this.guideLanguage = guideLanguage;
+    }
+
+    public String getSpecialization() {
+        return specialization;
+    }
+
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
+    }
+
+    public double getRating() {
+        return rating;
+    }
+
+    public void setRating(double rating) {
+        this.rating = rating;
+    }
+
+    public int getTotalRatings() {
+        return totalRatings;
+    }
+
+    public void setTotalRatings(int totalRatings) {
+        this.totalRatings = totalRatings;
+    }
+
+    public boolean isAvailable() {
+        return isAvailable;
+    }
+
+    public void setAvailable(boolean available) {
+        isAvailable = available;
+    }
+
+    public int getYearExperience() {
+        return yearExperience;
+    }
+
+    public void setYearExperience(int yearExperience) {
+        this.yearExperience = yearExperience;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    /**
+     * NEW METHOD: Calculate daily fee based on specialization, experience, and rating
+     */
+    public double getDailyFee() {
+        double base = 2500.0;
+        
+        // Base adjustment by specialization
+        String spec = (specialization != null ? specialization.toLowerCase() : "");
+        if (spec.contains("adventure")) {
+            base += 800;
+        } else if (spec.contains("history")) {
+            base += 500;
+        } else if (spec.contains("nature")) {
+            base += 400;
+        } else if (spec.contains("beach")) {
+            base += 300;
+        }
+        
+        // Experience premium (capped at 2000)
+        int exp = Math.max(0, yearExperience);
+        base += Math.min(2000.0, exp * 150.0);
+        
+        // Rating premium
+        base += rating * 200.0;
+        
+        // Round to nearest 50
+        return Math.round(base / 50.0) * 50.0;
+    }
 
     // -------------------- Optional DB helpers --------------------
-
+    
     public boolean setAvailability(Connection conn, boolean available) {
         if (conn == null) return false;
         if (guideId == null || guideId.trim().isEmpty()) return false;
@@ -90,7 +186,9 @@ public class Guide {
             ps.setBoolean(1, available);
             ps.setString(2, guideId);
             boolean ok = ps.executeUpdate() > 0;
-            if (ok) this.isAvailable = available;
+            if (ok) {
+                this.isAvailable = available;
+            }
             return ok;
         } catch (SQLException e) {
             System.out.println("Error setting availability: " + e.getMessage());
@@ -102,10 +200,9 @@ public class Guide {
         if (conn == null) return null;
         if (guideId == null || guideId.trim().isEmpty()) return null;
 
-        String sql =
-                "SELECT guideid, guidename, guideemail, guidephone, guidedivision, guidedistrict, guidelanguage, " +
-                "specialization, rating, totalratings, isavailable, yearexperience, status " +
-                "FROM guides WHERE guideid = ? LIMIT 1";
+        String sql = "SELECT guideid, guidename, guideemail, guidephone, guidedivision, " +
+                     "guidedistrict, guidelanguage, specialization, rating, totalratings, " +
+                     "isavailable, yearexperience, status FROM guides WHERE guideid = ? LIMIT 1";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, guideId.trim());
