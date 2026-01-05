@@ -48,7 +48,6 @@ public class GuideDashboard extends JPanel {
         sidebar.setPreferredSize(new Dimension(280, 800));
         sidebar.setBorder(new EmptyBorder(25, 20, 25, 20));
 
-        // User profile section
         JPanel profileBox = new JPanel();
         profileBox.setOpaque(false);
         profileBox.setLayout(new BoxLayout(profileBox, BoxLayout.Y_AXIS));
@@ -82,7 +81,6 @@ public class GuideDashboard extends JPanel {
         sidebar.add(sep);
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Navigation buttons
         sidebar.add(navBtn("📋 My Profile", "PROFILE"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
         sidebar.add(navBtn("📅 My Bookings", "BOOKINGS"));
@@ -115,7 +113,7 @@ public class GuideDashboard extends JPanel {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
         btn.setHorizontalAlignment(SwingConstants.LEFT);
-        
+
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 btn.setBackground(new Color(255, 255, 255, 40));
@@ -124,7 +122,7 @@ public class GuideDashboard extends JPanel {
                 btn.setBackground(new Color(255, 255, 255, 20));
             }
         });
-        
+
         btn.addActionListener(e -> contentLayout.show(contentPanel, panel));
         return btn;
     }
@@ -257,6 +255,7 @@ public class GuideDashboard extends JPanel {
                 JOptionPane.showMessageDialog(mainFrame, "Please select a booking!", "Warning", JOptionPane.WARNING_MESSAGE);
                 return;
             }
+
             String bookingId = String.valueOf(model.getValueAt(row, 0));
             showUpdateStatusDialog(bookingId);
         });
@@ -306,16 +305,25 @@ public class GuideDashboard extends JPanel {
             new EmptyBorder(30, 30, 30, 30)
         ));
 
-        Guide guide = Guide.getGuideById(mainFrame.getConnection(), mainFrame.getCurrentUserId());
-        boolean available = guide != null && guide.isAvailable();
-
-        JLabel statusLabel = new JLabel("Current Status: " + (available ? "AVAILABLE" : "NOT AVAILABLE"));
+        // DYNAMIC STATUS LABEL - Will refresh on button click
+        JLabel statusLabel = new JLabel();
         statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        statusLabel.setForeground(available ? ComfyGoGUI.SUCCESS : ComfyGoGUI.DANGER);
         statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Method to refresh status display
+        Runnable refreshStatus = () -> {
+            Guide guide = Guide.getGuideById(mainFrame.getConnection(), mainFrame.getCurrentUserId());
+            boolean available = guide != null && guide.isAvailable();
+            statusLabel.setText("Current Status: " + (available ? "AVAILABLE" : "NOT AVAILABLE"));
+            statusLabel.setForeground(available ? ComfyGoGUI.SUCCESS : ComfyGoGUI.DANGER);
+        };
+
+        // Initial status load
+        refreshStatus.run();
 
         JButton setAvail = ComfyGoGUI.createStyledButton("Set AVAILABLE", ComfyGoGUI.SUCCESS);
         JButton setUnavail = ComfyGoGUI.createStyledButton("Set NOT AVAILABLE", ComfyGoGUI.DANGER);
+
         setAvail.setAlignmentX(Component.LEFT_ALIGNMENT);
         setUnavail.setAlignmentX(Component.LEFT_ALIGNMENT);
         setAvail.setMaximumSize(new Dimension(300, 50));
@@ -324,16 +332,20 @@ public class GuideDashboard extends JPanel {
         setAvail.addActionListener(e -> {
             boolean ok = mainFrame.getGuideService().setGuideAvailability(mainFrame.getCurrentUserId(), true);
             if (ok) {
-                JOptionPane.showMessageDialog(mainFrame, "Availability updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                mainFrame.showPanel("GUIDE_DASHBOARD");
+                refreshStatus.run(); // REFRESH STATUS IMMEDIATELY
+                JOptionPane.showMessageDialog(mainFrame, "You are now AVAILABLE for bookings!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(mainFrame, "Cannot set AVAILABLE! You may have active tours.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         setUnavail.addActionListener(e -> {
             boolean ok = mainFrame.getGuideService().setGuideAvailability(mainFrame.getCurrentUserId(), false);
             if (ok) {
-                JOptionPane.showMessageDialog(mainFrame, "Availability updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                mainFrame.showPanel("GUIDE_DASHBOARD");
+                refreshStatus.run(); // REFRESH STATUS IMMEDIATELY
+                JOptionPane.showMessageDialog(mainFrame, "You are now NOT AVAILABLE for bookings!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(mainFrame, "Failed to update availability!", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -390,13 +402,28 @@ public class GuideDashboard extends JPanel {
         table.setSelectionBackground(new Color(26, 115, 232, 30));
         table.setSelectionForeground(ComfyGoGUI.TEXT_PRIMARY);
 
-        // FIXED TABLE HEADER - NOW VISIBLE
+        // FIXED TABLE HEADER - NOW VISIBLE WITH CUSTOM RENDERER
         JTableHeader header = table.getTableHeader();
-        header.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        header.setFont(new Font("Segoe UI", Font.BOLD, 15));
         header.setBackground(ComfyGoGUI.PRIMARY);
         header.setForeground(Color.WHITE);
-        header.setPreferredSize(new Dimension(header.getWidth(), 45));
-        header.setBorder(BorderFactory.createEmptyBorder());
+        header.setPreferredSize(new Dimension(header.getWidth(), 50));
+        header.setReorderingAllowed(false);
+        
+        header.setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                JLabel label = new JLabel(value == null ? "" : value.toString());
+                label.setFont(new Font("Segoe UI", Font.BOLD, 15));
+                label.setForeground(Color.WHITE);
+                label.setBackground(ComfyGoGUI.PRIMARY);
+                label.setOpaque(true);
+                label.setHorizontalAlignment(JLabel.CENTER);
+                label.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                return label;
+            }
+        });
 
         // Center align cells
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();

@@ -1,6 +1,7 @@
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.util.List;
@@ -319,42 +320,59 @@ public class ManagerDashboard extends JPanel {
         return f;
     }
 
+    // -------------------- BOOKINGS WITH COLORFUL TABLE --------------------
     private JPanel createBookingsPanel() {
         JPanel shell = screenShell("Hotel Bookings");
         JPanel body = new JPanel(new BorderLayout());
         body.setOpaque(false);
         body.setBorder(new EmptyBorder(20, 0, 0, 0));
 
-        JTextArea bookingsArea = new JTextArea(25, 80);
-        bookingsArea.setEditable(false);
-        bookingsArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        bookingsArea.setForeground(ComfyGoGUI.TEXT_PRIMARY);
-        bookingsArea.setBackground(ComfyGoGUI.SURFACE);
-        bookingsArea.setBorder(new EmptyBorder(20, 20, 20, 20));
-        bookingsArea.setText("Press Refresh to load bookings.\n");
+        String[] cols = {"Booking ID", "Dates", "Rooms", "Status", "Amount", "Payment ID"};
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        JTable table = createStyledTable(model);
+        JScrollPane sp = new JScrollPane(table);
+        sp.setBorder(BorderFactory.createEmptyBorder());
 
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(ComfyGoGUI.CARD_BG);
         card.setBorder(BorderFactory.createLineBorder(ComfyGoGUI.BORDER_LIGHT, 1));
-        card.add(ComfyGoGUI.scrollWrap(bookingsArea), BorderLayout.CENTER);
+        card.add(sp, BorderLayout.CENTER);
 
         JButton refreshBtn = ComfyGoGUI.createStyledButton("Refresh", ComfyGoGUI.PRIMARY);
         refreshBtn.addActionListener(e -> {
             Hotel hotel = mainFrame.getHotelService().getHotelByManagerId(mainFrame.getCurrentUserId());
-            bookingsArea.setText("");
+            model.setRowCount(0);
 
             if (hotel == null) {
-                bookingsArea.setText("No hotel found for this manager.\nAdd your hotel first.");
+                JOptionPane.showMessageDialog(mainFrame, "No hotel found for this manager.\nAdd your hotel first.", "Info", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
 
             List<String> bookings = mainFrame.getManagerService().getHotelBookings(hotel.getHotelId());
             if (bookings == null || bookings.isEmpty()) {
-                bookingsArea.setText("No bookings found.");
+                JOptionPane.showMessageDialog(mainFrame, "No bookings found.", "Info", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
 
-            for (String b : bookings) bookingsArea.append(b + "\n");
+            for (String b : bookings) {
+                String[] parts = b.split("\\|");
+                if (parts.length >= 6) {
+                    model.addRow(new Object[]{
+                        parts[0].trim(),
+                        parts[1].trim(),
+                        parts[2].trim(),
+                        parts[3].trim(),
+                        parts[4].trim(),
+                        parts[5].trim()
+                    });
+                }
+            }
         });
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
@@ -365,6 +383,52 @@ public class ManagerDashboard extends JPanel {
         body.add(card, BorderLayout.CENTER);
         shell.add(body, BorderLayout.CENTER);
         return shell;
+    }
+
+    // -------------------- STYLED TABLE METHOD --------------------
+    private JTable createStyledTable(DefaultTableModel model) {
+        JTable table = new JTable(model);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        table.setForeground(ComfyGoGUI.TEXT_PRIMARY);
+        table.setBackground(ComfyGoGUI.SURFACE);
+        table.setRowHeight(45);
+        table.setGridColor(ComfyGoGUI.BORDER_LIGHT);
+        table.setSelectionBackground(new Color(255, 152, 0, 30));
+        table.setSelectionForeground(ComfyGoGUI.TEXT_PRIMARY);
+        table.setShowGrid(true);
+        table.setIntercellSpacing(new Dimension(1, 1));
+
+        // COLORFUL TABLE HEADER
+        JTableHeader header = table.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        header.setBackground(new Color(255, 152, 0));
+        header.setForeground(Color.WHITE);
+        header.setPreferredSize(new Dimension(header.getWidth(), 50));
+        header.setReorderingAllowed(false);
+        
+        header.setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                JLabel label = new JLabel(value == null ? "" : value.toString());
+                label.setFont(new Font("Segoe UI", Font.BOLD, 15));
+                label.setForeground(Color.WHITE);
+                label.setBackground(new Color(255, 152, 0));
+                label.setOpaque(true);
+                label.setHorizontalAlignment(JLabel.CENTER);
+                label.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                return label;
+            }
+        });
+
+        // Center align cells
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+
+        return table;
     }
 
     private JPanel createSettingsPanel() {
