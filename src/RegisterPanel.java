@@ -13,7 +13,7 @@ public class RegisterPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(ComfyGoGUI.BACKGROUND);
 
-        // ========== Header ==========
+        // Header
         JPanel header = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -56,8 +56,8 @@ public class RegisterPanel extends JPanel {
         header.add(titleBox, BorderLayout.CENTER);
         add(header, BorderLayout.NORTH);
 
-        // ========== Center (scrollable) ==========
-        JPanel center = new JPanel(new GridBagLayout());
+        // Center content
+        JPanel center = new JPanel(new BorderLayout());
         center.setBackground(ComfyGoGUI.BACKGROUND);
         center.setBorder(new EmptyBorder(30, 30, 30, 30));
 
@@ -78,11 +78,12 @@ public class RegisterPanel extends JPanel {
         roleCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         roleCombo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Forms container
+        // Forms container with CardLayout
         formLayout = new CardLayout();
         formContainer = new JPanel(formLayout);
         formContainer.setOpaque(false);
         formContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         formContainer.add(createTouristForm(), "Tourist");
         formContainer.add(createGuideForm(), "Tour Guide");
         formContainer.add(createManagerForm(), "Hotel Manager");
@@ -95,15 +96,15 @@ public class RegisterPanel extends JPanel {
         card.add(Box.createRigidArea(new Dimension(0, 25)));
         card.add(formContainer);
 
-        JScrollPane scroll = ComfyGoGUI.scrollWrap(card);
-        scroll.setPreferredSize(new Dimension(900, 650));
+        JScrollPane scroll = new JScrollPane(card);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        center.add(scroll, gbc);
-
+        center.add(scroll, BorderLayout.CENTER);
         add(center, BorderLayout.CENTER);
+
+        // Show initial form
         switchForm();
     }
 
@@ -115,7 +116,6 @@ public class RegisterPanel extends JPanel {
         repaint();
     }
 
-    // -------------------- Forms --------------------
     private JPanel createTouristForm() {
         JPanel panel = formSectionPanel();
 
@@ -133,6 +133,7 @@ public class RegisterPanel extends JPanel {
         JButton registerBtn = ComfyGoGUI.createStyledButton("Register as Tourist", ComfyGoGUI.PRIMARY);
         registerBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         registerBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
         registerBtn.addActionListener(e -> {
             boolean success = mainFrame.getAuthService().registerTourist(
                 nameField.getText().trim(),
@@ -145,6 +146,7 @@ public class RegisterPanel extends JPanel {
                 addressField.getText().trim(),
                 new String(passwordField.getPassword())
             );
+
             if (success) {
                 JOptionPane.showMessageDialog(
                     mainFrame,
@@ -204,6 +206,7 @@ public class RegisterPanel extends JPanel {
         JButton registerBtn = ComfyGoGUI.createStyledButton("Register as Tour Guide", ComfyGoGUI.SECONDARY);
         registerBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         registerBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
         registerBtn.addActionListener(e -> {
             int experience;
             try {
@@ -270,6 +273,7 @@ public class RegisterPanel extends JPanel {
         JButton registerBtn = ComfyGoGUI.createStyledButton("Register as Hotel Manager", ComfyGoGUI.ACCENT);
         registerBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         registerBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
         registerBtn.addActionListener(e -> {
             boolean success = mainFrame.getAuthService().registerManager(
                 nameField.getText().trim(),
@@ -311,7 +315,6 @@ public class RegisterPanel extends JPanel {
         return panel;
     }
 
-    // -------------------- UI helpers --------------------
     private JPanel formSectionPanel() {
         JPanel p = new JPanel();
         p.setOpaque(false);
@@ -326,6 +329,7 @@ public class RegisterPanel extends JPanel {
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(label);
         panel.add(Box.createRigidArea(new Dimension(0, 8)));
+
         JTextField field = ComfyGoGUI.createStyledTextField();
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         field.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -339,6 +343,7 @@ public class RegisterPanel extends JPanel {
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(label);
         panel.add(Box.createRigidArea(new Dimension(0, 8)));
+
         JPasswordField field = ComfyGoGUI.createStyledPasswordField();
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         field.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -350,10 +355,13 @@ public class RegisterPanel extends JPanel {
         show.setBackground(ComfyGoGUI.CARD_BG);
         show.setAlignmentX(Component.LEFT_ALIGNMENT);
         show.setFocusPainted(false);
+
         char defaultEcho = field.getEchoChar();
         show.addActionListener(e -> field.setEchoChar(show.isSelected() ? (char) 0 : defaultEcho));
+
         panel.add(Box.createRigidArea(new Dimension(0, 8)));
         panel.add(show);
+
         return field;
     }
 
@@ -366,6 +374,7 @@ public class RegisterPanel extends JPanel {
         b.setBorderPainted(false);
         b.setFocusPainted(false);
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
         b.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 b.setForeground(ComfyGoGUI.PRIMARY_DARK);
@@ -374,6 +383,7 @@ public class RegisterPanel extends JPanel {
                 b.setForeground(ComfyGoGUI.PRIMARY);
             }
         });
+
         return b;
     }
 }

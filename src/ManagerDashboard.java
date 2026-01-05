@@ -24,7 +24,6 @@ public class ManagerDashboard extends JPanel {
 
         contentPanel.add(createHotelPanel(), "HOTEL");
         contentPanel.add(createBookingsPanel(), "BOOKINGS");
-        contentPanel.add(createFoodMenuPanel(), "FOOD");
         contentPanel.add(createSettingsPanel(), "SETTINGS");
         contentPanel.add(createRatingsPanel(), "RATINGS");
 
@@ -48,7 +47,6 @@ public class ManagerDashboard extends JPanel {
         sidebar.setPreferredSize(new Dimension(280, 800));
         sidebar.setBorder(new EmptyBorder(25, 20, 25, 20));
 
-        // User profile section
         JPanel profileBox = new JPanel();
         profileBox.setOpaque(false);
         profileBox.setLayout(new BoxLayout(profileBox, BoxLayout.Y_AXIS));
@@ -82,12 +80,9 @@ public class ManagerDashboard extends JPanel {
         sidebar.add(sep);
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Navigation buttons
         sidebar.add(navBtn("🏨 My Hotel", "HOTEL"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
         sidebar.add(navBtn("📋 Bookings", "BOOKINGS"));
-        sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidebar.add(navBtn("🍽️ Food Menu", "FOOD"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
         sidebar.add(navBtn("⚙️ Settings", "SETTINGS"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -117,7 +112,7 @@ public class ManagerDashboard extends JPanel {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
         btn.setHorizontalAlignment(SwingConstants.LEFT);
-        
+
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 btn.setBackground(new Color(255, 255, 255, 40));
@@ -126,7 +121,7 @@ public class ManagerDashboard extends JPanel {
                 btn.setBackground(new Color(255, 255, 255, 20));
             }
         });
-        
+
         btn.addActionListener(e -> contentLayout.show(contentPanel, panel));
         return btn;
     }
@@ -152,7 +147,6 @@ public class ManagerDashboard extends JPanel {
         return shell;
     }
 
-    // -------------------- HOTEL --------------------
     private JPanel createHotelPanel() {
         JPanel shell = screenShell("My Hotel");
         JPanel body = new JPanel(new BorderLayout());
@@ -273,6 +267,7 @@ public class ManagerDashboard extends JPanel {
         JButton addBtn = ComfyGoGUI.createStyledButton("Add Hotel", ComfyGoGUI.SUCCESS);
         addBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         addBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
         addBtn.addActionListener(e -> {
             try {
                 double price = Double.parseDouble(priceField.getText().trim());
@@ -316,6 +311,7 @@ public class ManagerDashboard extends JPanel {
         l.setAlignmentX(Component.LEFT_ALIGNMENT);
         parent.add(l);
         parent.add(Box.createRigidArea(new Dimension(0, 8)));
+
         JTextField f = ComfyGoGUI.createStyledTextField();
         f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         f.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -323,7 +319,6 @@ public class ManagerDashboard extends JPanel {
         return f;
     }
 
-    // -------------------- BOOKINGS --------------------
     private JPanel createBookingsPanel() {
         JPanel shell = screenShell("Hotel Bookings");
         JPanel body = new JPanel(new BorderLayout());
@@ -372,42 +367,6 @@ public class ManagerDashboard extends JPanel {
         return shell;
     }
 
-    // -------------------- FOOD MENU --------------------
-    private JPanel createFoodMenuPanel() {
-        JPanel shell = screenShell("Food Menu Management");
-        JPanel body = new JPanel(new BorderLayout());
-        body.setOpaque(false);
-        body.setBorder(new EmptyBorder(20, 0, 0, 0));
-
-        JTextArea menuArea = new JTextArea(20, 80);
-        menuArea.setEditable(false);
-        menuArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        menuArea.setForeground(ComfyGoGUI.TEXT_PRIMARY);
-        menuArea.setBackground(ComfyGoGUI.SURFACE);
-        menuArea.setBorder(new EmptyBorder(20, 20, 20, 20));
-        menuArea.setText("Food menu items will appear here.\n(You can connect this to DB later.)");
-
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(ComfyGoGUI.CARD_BG);
-        card.setBorder(BorderFactory.createLineBorder(ComfyGoGUI.BORDER_LIGHT, 1));
-        card.add(ComfyGoGUI.scrollWrap(menuArea), BorderLayout.CENTER);
-
-        JButton addBtn = ComfyGoGUI.createStyledButton("Add Item (Demo)", ComfyGoGUI.SECONDARY);
-        addBtn.addActionListener(e ->
-            JOptionPane.showMessageDialog(mainFrame, "Food menu UI ready (connect DB logic if needed).", "Info", JOptionPane.INFORMATION_MESSAGE)
-        );
-
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
-        actions.setBackground(ComfyGoGUI.CARD_BG);
-        actions.add(addBtn);
-        card.add(actions, BorderLayout.SOUTH);
-
-        body.add(card, BorderLayout.CENTER);
-        shell.add(body, BorderLayout.CENTER);
-        return shell;
-    }
-
-    // -------------------- SETTINGS --------------------
     private JPanel createSettingsPanel() {
         JPanel shell = screenShell("Hotel Settings");
         JPanel body = new JPanel(new BorderLayout());
@@ -432,6 +391,7 @@ public class ManagerDashboard extends JPanel {
         JButton updateRoomsBtn = ComfyGoGUI.createStyledButton("Update Rooms", ComfyGoGUI.PRIMARY);
         updateRoomsBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         updateRoomsBtn.setMaximumSize(new Dimension(250, 50));
+
         updateRoomsBtn.addActionListener(e -> {
             try {
                 int rooms = Integer.parseInt(roomsField.getText().trim());
@@ -465,6 +425,7 @@ public class ManagerDashboard extends JPanel {
         JButton updatePriceBtn = ComfyGoGUI.createStyledButton("Update Price", ComfyGoGUI.PRIMARY);
         updatePriceBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         updatePriceBtn.setMaximumSize(new Dimension(250, 50));
+
         updatePriceBtn.addActionListener(e -> {
             try {
                 double price = Double.parseDouble(priceField.getText().trim());
@@ -487,7 +448,6 @@ public class ManagerDashboard extends JPanel {
         return shell;
     }
 
-    // -------------------- RATINGS --------------------
     private JPanel createRatingsPanel() {
         JPanel shell = screenShell("Hotel Ratings");
         JPanel body = new JPanel(new BorderLayout());

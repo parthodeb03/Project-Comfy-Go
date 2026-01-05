@@ -53,12 +53,11 @@ public class TouristDashboard extends JPanel {
         sidebar.setPreferredSize(new Dimension(280, 800));
         sidebar.setBorder(new EmptyBorder(25, 20, 25, 20));
 
-        // User profile
         JPanel profilePanel = new JPanel();
         profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS));
         profilePanel.setOpaque(false);
 
-        JLabel userIcon = new JLabel("👤");
+        JLabel userIcon = new JLabel("USER");
         userIcon.setFont(new Font("Segoe UI", Font.PLAIN, 40));
         userIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
         userIcon.setForeground(Color.WHITE);
@@ -88,20 +87,19 @@ public class TouristDashboard extends JPanel {
         sidebar.add(sep);
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Navigation buttons
-        sidebar.add(navBtn("🏠 Dashboard", "HOME"));
+        sidebar.add(navBtn("Dashboard", "HOME"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidebar.add(navBtn("🏨 Hotels", "HOTELS"));
+        sidebar.add(navBtn("Hotels", "HOTELS"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidebar.add(navBtn("🗺️ Tourist Spots", "SPOTS"));
+        sidebar.add(navBtn("Tourist Spots", "SPOTS"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidebar.add(navBtn("🧑‍🤝‍🧑 Tour Guides", "GUIDES"));
+        sidebar.add(navBtn("Tour Guides", "GUIDES"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidebar.add(navBtn("🚌 Transport", "TRANSPORT"));
+        sidebar.add(navBtn("Transport", "TRANSPORT"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidebar.add(navBtn("📋 My Bookings", "BOOKINGS"));
+        sidebar.add(navBtn("My Bookings", "BOOKINGS"));
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidebar.add(navBtn("⭐ Rate & Review", "RATINGS"));
+        sidebar.add(navBtn("Rate & Review", "RATINGS"));
 
         sidebar.add(Box.createVerticalGlue());
 
@@ -180,7 +178,6 @@ public class TouristDashboard extends JPanel {
         table.setBackground(Color.WHITE);
         table.setForeground(new Color(33, 33, 33));
 
-        // Custom header renderer to force colors
         JTableHeader header = table.getTableHeader();
         header.setPreferredSize(new Dimension(header.getWidth(), 45));
         
@@ -190,8 +187,8 @@ public class TouristDashboard extends JPanel {
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 JLabel label = new JLabel(value.toString());
                 label.setFont(new Font("Segoe UI", Font.BOLD, 15));
-                label.setBackground(new Color(33, 150, 243));  // Blue background
-                label.setForeground(Color.WHITE);              // White text
+                label.setBackground(new Color(33, 150, 243));
+                label.setForeground(Color.WHITE);
                 label.setOpaque(true);
                 label.setHorizontalAlignment(SwingConstants.CENTER);
                 label.setBorder(BorderFactory.createCompoundBorder(
@@ -202,12 +199,10 @@ public class TouristDashboard extends JPanel {
             }
         };
         
-        // Apply custom renderer to all columns
         for (int i = 0; i < table.getColumnModel().getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
         }
 
-        // Center align cell content
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         for (int i = 0; i < table.getColumnCount(); i++) {
@@ -225,17 +220,16 @@ public class TouristDashboard extends JPanel {
         return label;
     }
 
-    // ========== HOME PANEL ==========
     private JPanel createHomePanel() {
         JPanel shell = screenShell("Tourist Dashboard");
         JPanel body = new JPanel(new GridLayout(2, 2, 20, 20));
         body.setOpaque(false);
         body.setBorder(new EmptyBorder(20, 0, 0, 0));
 
-        body.add(statCard("🏨 Hotels", "Browse & book hotels", ComfyGoGUI.PRIMARY));
-        body.add(statCard("🗺️ Tourist Spots", "Explore top places", ComfyGoGUI.SUCCESS));
-        body.add(statCard("🧑‍🤝‍🧑 Tour Guides", "Hire available guides", new Color(156, 39, 176)));
-        body.add(statCard("🚌 Transport", "View routes & options", ComfyGoGUI.DANGER));
+        body.add(statCard("Hotels", "Browse & book hotels", ComfyGoGUI.PRIMARY));
+        body.add(statCard("Tourist Spots", "Explore top places", ComfyGoGUI.SUCCESS));
+        body.add(statCard("Tour Guides", "Hire available guides", new Color(156, 39, 176)));
+        body.add(statCard("Transport", "View routes & options", ComfyGoGUI.DANGER));
 
         shell.add(body, BorderLayout.CENTER);
         return shell;
@@ -269,7 +263,6 @@ public class TouristDashboard extends JPanel {
         return card;
     }
 
-    // ========== HOTELS PANEL ==========
     private JPanel createHotelsPanel() {
         JPanel shell = screenShell("Search & Book Hotels");
         JPanel body = new JPanel(new BorderLayout(0, 16));
@@ -594,7 +587,6 @@ public class TouristDashboard extends JPanel {
         return card;
     }
 
-    // ========== SPOTS PANEL - COLORFUL CARD LAYOUT ==========
     private JPanel createSpotsPanel() {
         JPanel shell = screenShell("Explore Tourist Spots");
         JPanel body = new JPanel(new BorderLayout());
@@ -603,20 +595,18 @@ public class TouristDashboard extends JPanel {
 
         List<TouristSpot> spots = mainFrame.getSpotService().getAllSpots();
 
-        // Create grid panel for cards (3 columns)
         JPanel cardsPanel = new JPanel(new GridLayout(0, 3, 20, 20));
         cardsPanel.setOpaque(false);
 
-        // Color palette for divisions
         Color[] divisionColors = {
-            new Color(26, 188, 156),    // Turquoise
-            new Color(46, 204, 113),    // Emerald
-            new Color(52, 152, 219),    // Blue
-            new Color(155, 89, 182),    // Purple
-            new Color(241, 196, 15),    // Yellow
-            new Color(230, 126, 34),    // Orange
-            new Color(231, 76, 60),     // Red
-            new Color(149, 165, 166)    // Gray
+            new Color(26, 188, 156),
+            new Color(46, 204, 113),
+            new Color(52, 152, 219),
+            new Color(155, 89, 182),
+            new Color(241, 196, 15),
+            new Color(230, 126, 34),
+            new Color(231, 76, 60),
+            new Color(149, 165, 166)
         };
 
         int colorIndex = 0;
@@ -646,12 +636,11 @@ public class TouristDashboard extends JPanel {
         ));
         card.setPreferredSize(new Dimension(350, 220));
 
-        // Top section with icon and name
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
         topPanel.setOpaque(false);
 
-        JLabel iconLabel = new JLabel("🗺️");
+        JLabel iconLabel = new JLabel("MAP");
         iconLabel.setFont(new Font("Segoe UI", Font.PLAIN, 48));
         iconLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -664,13 +653,12 @@ public class TouristDashboard extends JPanel {
         topPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         topPanel.add(nameLabel);
 
-        // Middle section with location info
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setOpaque(false);
         infoPanel.setBorder(new EmptyBorder(15, 0, 10, 0));
 
-        JLabel divisionLabel = new JLabel("📍 " + spot.getDivision() + " - " + spot.getDistrict());
+        JLabel divisionLabel = new JLabel("Location: " + spot.getDivision() + " - " + spot.getDistrict());
         divisionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         divisionLabel.setForeground(ComfyGoGUI.TEXT_SECONDARY);
         divisionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -684,7 +672,6 @@ public class TouristDashboard extends JPanel {
         infoPanel.add(Box.createRigidArea(new Dimension(0, 8)));
         infoPanel.add(feeLabel);
 
-        // Bottom section with rating
         JPanel ratingPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
         ratingPanel.setOpaque(false);
 
@@ -692,7 +679,7 @@ public class TouristDashboard extends JPanel {
         int fullStars = (int) rating;
         
         for (int i = 0; i < fullStars; i++) {
-            JLabel star = new JLabel("⭐");
+            JLabel star = new JLabel("STAR");
             star.setFont(new Font("Segoe UI", Font.PLAIN, 16));
             ratingPanel.add(star);
         }
@@ -706,7 +693,6 @@ public class TouristDashboard extends JPanel {
         card.add(infoPanel, BorderLayout.CENTER);
         card.add(ratingPanel, BorderLayout.SOUTH);
 
-        // Hover effect
         card.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -736,13 +722,13 @@ public class TouristDashboard extends JPanel {
 
     private void showSpotDetails(TouristSpot spot) {
         String details = String.format(
-            "🗺️ TOURIST SPOT DETAILS\n\n" +
+            "TOURIST SPOT DETAILS\n\n" +
             "Spot Name: %s\n\n" +
             "Location:\n" +
             "  Division: %s\n" +
             "  District: %s\n\n" +
             "Entry Fee: BDT %.2f\n" +
-            "Rating: %.1f/5 ⭐\n\n" +
+            "Rating: %.1f/5\n\n" +
             "Plan your visit to this amazing destination!",
             spot.getSpotName(),
             spot.getDivision(),
@@ -759,7 +745,6 @@ public class TouristDashboard extends JPanel {
         );
     }
 
-    // ========== GUIDES PANEL ==========
     private JPanel createGuidesPanel() {
         JPanel shell = screenShell("Hire Tour Guides");
         JPanel body = new JPanel(new BorderLayout(0, 20));
@@ -1049,101 +1034,557 @@ public class TouristDashboard extends JPanel {
         return card;
     }
 
-    // ========== TRANSPORT PANEL ==========
     private JPanel createTransportPanel() {
-        JPanel shell = screenShell("Transportation Options");
-        JPanel body = new JPanel(new BorderLayout());
+        JPanel shell = screenShell("Transportation Booking");
+        JPanel body = new JPanel(new BorderLayout(0, 20));
         body.setOpaque(false);
         body.setBorder(new EmptyBorder(20, 0, 0, 0));
 
-        JPanel card = createCard();
-        card.setLayout(new BorderLayout());
-        card.setBorder(new EmptyBorder(20, 20, 20, 20));
+        JPanel tabPanel = new JPanel(new GridLayout(1, 4, 10, 0));
+        tabPanel.setOpaque(false);
+        tabPanel.setBorder(new EmptyBorder(0, 0, 15, 0));
 
-        JLabel infoLabel = new JLabel("🚌 Transportation Services Available");
-        infoLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        infoLabel.setForeground(ComfyGoGUI.TEXT_PRIMARY);
-        infoLabel.setBorder(new EmptyBorder(0, 0, 20, 0));
+        JButton busTabBtn = createTransportTabButton("BUS", new Color(76, 175, 80), true);
+        JButton trainTabBtn = createTransportTabButton("TRAIN", new Color(33, 150, 243), false);
+        JButton airTabBtn = createTransportTabButton("AIR", new Color(156, 39, 176), false);
+        JButton launchTabBtn = createTransportTabButton("LAUNCH", new Color(255, 152, 0), false);
 
-        JTextArea routesArea = new JTextArea(20, 60);
-        routesArea.setEditable(false);
-        routesArea.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        routesArea.setForeground(ComfyGoGUI.TEXT_PRIMARY);
-        routesArea.setBackground(ComfyGoGUI.SURFACE);
-        routesArea.setBorder(new EmptyBorder(15, 15, 15, 15));
-        routesArea.setLineWrap(true);
-        routesArea.setWrapStyleWord(true);
+        tabPanel.add(busTabBtn);
+        tabPanel.add(trainTabBtn);
+        tabPanel.add(airTabBtn);
+        tabPanel.add(launchTabBtn);
 
-        List<String> routes = mainFrame.getTransportService().getAllRoutes();
-        StringBuilder sb = new StringBuilder();
-        sb.append("Available Transport Routes:\n\n");
-        
-        if (routes != null && !routes.isEmpty()) {
-            for (String route : routes) {
-                sb.append("  • ").append(route).append("\n");
-            }
-        } else {
-            sb.append("No routes available at the moment.\n");
-        }
-        
-        sb.append("\n");
-        sb.append("Available Locations:\n\n");
-        List<String> locations = mainFrame.getTransportService().getAllLocations();
-        if (locations != null && !locations.isEmpty()) {
-            for (String loc : locations) {
-                sb.append("  • ").append(loc).append("\n");
-            }
-        }
+        CardLayout transportCardLayout = new CardLayout();
+        JPanel transportContentPanel = new JPanel(transportCardLayout);
+        transportContentPanel.setOpaque(false);
 
-        routesArea.setText(sb.toString());
+        transportContentPanel.add(createBusBookingPanel(), "BUS");
+        transportContentPanel.add(createTrainBookingPanel(), "TRAIN");
+        transportContentPanel.add(createAirBookingPanel(), "AIR");
+        transportContentPanel.add(createLaunchBookingPanel(), "LAUNCH");
 
-        JScrollPane scrollPane = new JScrollPane(routesArea);
-        scrollPane.setBorder(BorderFactory.createLineBorder(ComfyGoGUI.BORDER_MEDIUM, 1));
-
-        JPanel contentPanel = new JPanel(new BorderLayout(0, 15));
-        contentPanel.setOpaque(false);
-        contentPanel.add(infoLabel, BorderLayout.NORTH);
-        contentPanel.add(scrollPane, BorderLayout.CENTER);
-
-        JButton refreshBtn = ComfyGoGUI.createStyledButton("Refresh Routes", ComfyGoGUI.PRIMARY);
-        refreshBtn.addActionListener(e -> {
-            List<String> updatedRoutes = mainFrame.getTransportService().getAllRoutes();
-            List<String> updatedLocations = mainFrame.getTransportService().getAllLocations();
-            
-            StringBuilder newSb = new StringBuilder();
-            newSb.append("Available Transport Routes:\n\n");
-            
-            if (updatedRoutes != null && !updatedRoutes.isEmpty()) {
-                for (String route : updatedRoutes) {
-                    newSb.append("  • ").append(route).append("\n");
-                }
-            } else {
-                newSb.append("No routes available.\n");
-            }
-            
-            newSb.append("\n");
-            newSb.append("Available Locations:\n\n");
-            if (updatedLocations != null && !updatedLocations.isEmpty()) {
-                for (String loc : updatedLocations) {
-                    newSb.append("  • ").append(loc).append("\n");
-                }
-            }
-            
-            routesArea.setText(newSb.toString());
+        busTabBtn.addActionListener(e -> {
+            transportCardLayout.show(transportContentPanel, "BUS");
+            setActiveTab(busTabBtn, trainTabBtn, airTabBtn, launchTabBtn);
+        });
+        trainTabBtn.addActionListener(e -> {
+            transportCardLayout.show(transportContentPanel, "TRAIN");
+            setActiveTab(trainTabBtn, busTabBtn, airTabBtn, launchTabBtn);
+        });
+        airTabBtn.addActionListener(e -> {
+            transportCardLayout.show(transportContentPanel, "AIR");
+            setActiveTab(airTabBtn, busTabBtn, trainTabBtn, launchTabBtn);
+        });
+        launchTabBtn.addActionListener(e -> {
+            transportCardLayout.show(transportContentPanel, "LAUNCH");
+            setActiveTab(launchTabBtn, busTabBtn, trainTabBtn, airTabBtn);
         });
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.setOpaque(false);
-        buttonPanel.add(refreshBtn);
-
-        contentPanel.add(buttonPanel, BorderLayout.SOUTH);
-        card.add(contentPanel, BorderLayout.CENTER);
-        body.add(card, BorderLayout.CENTER);
+        body.add(tabPanel, BorderLayout.NORTH);
+        body.add(transportContentPanel, BorderLayout.CENTER);
         shell.add(body, BorderLayout.CENTER);
         return shell;
     }
 
-    // ========== BOOKINGS PANEL ==========
+    private JButton createTransportTabButton(String text, Color color, boolean isActive) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btn.setForeground(isActive ? Color.WHITE : color);
+        btn.setBackground(isActive ? color : Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(color, 2),
+            new EmptyBorder(15, 20, 15, 20)
+        ));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.putClientProperty("originalColor", color);
+        btn.putClientProperty("isActive", isActive);
+        return btn;
+    }
+
+    private void setActiveTab(JButton activeBtn, JButton... otherBtns) {
+        Color activeColor = (Color) activeBtn.getClientProperty("originalColor");
+        activeBtn.setBackground(activeColor);
+        activeBtn.setForeground(Color.WHITE);
+        activeBtn.putClientProperty("isActive", true);
+
+        for (JButton btn : otherBtns) {
+            Color btnColor = (Color) btn.getClientProperty("originalColor");
+            btn.setBackground(Color.WHITE);
+            btn.setForeground(btnColor);
+            btn.putClientProperty("isActive", false);
+        }
+    }
+
+    private JPanel createBusBookingPanel() {
+        JPanel splitPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        splitPanel.setOpaque(false);
+
+        String[][] busTypes = {
+            {"AC Sleeper Coach", "1500", "76,175,80", "30", "Fully AC, Reclining Seats, WiFi, Blankets, TV"},
+            {"AC Business", "1200", "33,150,243", "40", "Air Conditioned, Comfortable Seats, Entertainment"},
+            {"Non-AC Deluxe", "800", "255,152,0", "45", "Economy Class, Standard Seats, Clean, Fast"},
+            {"Local Express", "500", "244,67,54", "50", "Budget Friendly, Quick Service, Multiple Stops"}
+        };
+
+        String[] divisions = {"Dhaka", "Chittagong", "Rajshahi", "Khulna", "Sylhet", "Barisal", "Rangpur", "Mymensingh"};
+
+        JLabel[] sharedSelectedLabel = new JLabel[1];
+        JLabel[] sharedPriceLabel = new JLabel[1];
+
+        JPanel leftPanel = createVehicleTypePanelWithSharedLabels(busTypes, "Bus", new Color(76, 175, 80), sharedSelectedLabel, sharedPriceLabel);
+        JPanel rightPanel = createBookingFormPanelWithSharedLabels("Bus", divisions, divisions, new Color(76, 175, 80), sharedSelectedLabel, sharedPriceLabel);
+
+        splitPanel.add(leftPanel);
+        splitPanel.add(rightPanel);
+
+        return splitPanel;
+    }
+
+    private JPanel createTrainBookingPanel() {
+        JPanel splitPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        splitPanel.setOpaque(false);
+
+        String[][] trainTypes = {
+            {"Suborno Express", "1200", "33,150,243", "AC Cabin", "Dhaka-Chittagong, Premium AC, Dining Car, Fast"},
+            {"Sonar Bangla", "1000", "76,175,80", "AC Chair", "Dhaka-Rajshahi, Air Conditioned, Comfortable"},
+            {"Parabat Express", "800", "156,39,176", "First Class", "Dhaka-Sylhet, Scenic Route, Clean, Reliable"},
+            {"Intercity", "600", "255,152,0", "Second Class", "All Routes, Economy, Frequent Service"},
+            {"Mail Express", "400", "244,67,54", "General", "All Routes, Budget Friendly, Multiple Stops"}
+        };
+
+        String[] trainRoutes = {"Dhaka", "Chittagong", "Rajshahi", "Khulna", "Sylhet", "Rangpur", "Mymensingh"};
+
+        JLabel[] sharedSelectedLabel = new JLabel[1];
+        JLabel[] sharedPriceLabel = new JLabel[1];
+
+        JPanel leftPanel = createVehicleTypePanelWithSharedLabels(trainTypes, "Train", new Color(33, 150, 243), sharedSelectedLabel, sharedPriceLabel);
+        JPanel rightPanel = createBookingFormPanelWithSharedLabels("Train", trainRoutes, trainRoutes, new Color(33, 150, 243), sharedSelectedLabel, sharedPriceLabel);
+
+        splitPanel.add(leftPanel);
+        splitPanel.add(rightPanel);
+
+        return splitPanel;
+    }
+
+    private JPanel createAirBookingPanel() {
+        JPanel splitPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        splitPanel.setOpaque(false);
+
+        String[][] airTypes = {
+            {"Biman Bangladesh", "8000", "220,20,60", "Business Class", "All Routes, Premium Service, Meals, WiFi"},
+            {"US-Bangla Airlines", "6000", "156,39,176", "Economy Plus", "Major Routes, Comfortable, Snacks"},
+            {"Novoair", "5000", "33,150,243", "Economy", "Domestic Routes, Modern Fleet, Reliable"},
+            {"Regent Airways", "4500", "255,152,0", "Standard", "Popular Routes, Budget Friendly, Safe"}
+        };
+
+        String[] airports = {"Dhaka (DAC)", "Chittagong (CGP)", "Sylhet (ZYL)", "Jessore (JSR)", "Cox's Bazar (CXB)"};
+
+        JLabel[] sharedSelectedLabel = new JLabel[1];
+        JLabel[] sharedPriceLabel = new JLabel[1];
+
+        JPanel leftPanel = createVehicleTypePanelWithSharedLabels(airTypes, "Flight", new Color(156, 39, 176), sharedSelectedLabel, sharedPriceLabel);
+        JPanel rightPanel = createBookingFormPanelWithSharedLabels("Air", airports, airports, new Color(156, 39, 176), sharedSelectedLabel, sharedPriceLabel);
+
+        splitPanel.add(leftPanel);
+        splitPanel.add(rightPanel);
+
+        return splitPanel;
+    }
+
+    private JPanel createLaunchBookingPanel() {
+        JPanel splitPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        splitPanel.setOpaque(false);
+
+        String[][] launchTypes = {
+            {"MV Sundarban", "1200", "255,152,0", "VIP Cabin", "AC Cabin, Private Room, Food Included, WiFi"},
+            {"MV Parabat", "900", "33,150,243", "Deck Cabin", "Semi AC, Comfortable Bed, Scenic River View"},
+            {"MV Green Line", "600", "76,175,80", "Deck Seat", "Open Deck, Standard Seat, Budget Friendly"},
+            {"MV Karnaphuli", "400", "244,67,54", "General Deck", "Economy Class, Basic Amenities, River Journey"}
+        };
+
+        String[] launchRoutes = {"Dhaka (Sadarghat)", "Barisal", "Khulna (Mongla)", "Patuakhali", "Bhola", "Chandpur"};
+
+        JLabel[] sharedSelectedLabel = new JLabel[1];
+        JLabel[] sharedPriceLabel = new JLabel[1];
+
+        JPanel leftPanel = createVehicleTypePanelWithSharedLabels(launchTypes, "Launch", new Color(255, 152, 0), sharedSelectedLabel, sharedPriceLabel);
+        JPanel rightPanel = createBookingFormPanelWithSharedLabels("Launch", launchRoutes, launchRoutes, new Color(255, 152, 0), sharedSelectedLabel, sharedPriceLabel);
+
+        splitPanel.add(leftPanel);
+        splitPanel.add(rightPanel);
+
+        return splitPanel;
+    }
+
+    private JPanel createVehicleTypePanelWithSharedLabels(String[][] vehicleData, String vehicleType, Color themeColor, JLabel[] selectedVehicleLabel, JLabel[] basePriceLabel) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createLineBorder(new Color(224, 224, 224), 1));
+
+        JLabel title = new JLabel("Select " + vehicleType + " Type");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        title.setForeground(themeColor);
+        title.setBorder(new EmptyBorder(15, 20, 15, 20));
+
+        JPanel vehiclesPanel = new JPanel();
+        vehiclesPanel.setLayout(new BoxLayout(vehiclesPanel, BoxLayout.Y_AXIS));
+        vehiclesPanel.setBackground(Color.WHITE);
+        vehiclesPanel.setBorder(new EmptyBorder(10, 15, 10, 15));
+
+        ButtonGroup vehicleGroup = new ButtonGroup();
+
+        for (String[] vehicle : vehicleData) {
+            JPanel card = createVehicleCard(vehicle, vehicleGroup, selectedVehicleLabel, basePriceLabel);
+            vehiclesPanel.add(card);
+            vehiclesPanel.add(Box.createRigidArea(new Dimension(0, 12)));
+        }
+
+        JScrollPane scrollPane = new JScrollPane(vehiclesPanel);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        panel.add(title, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createVehicleCard(String[] vehicleData, ButtonGroup group, JLabel[] selectedLabel, JLabel[] priceLabel) {
+        String name = vehicleData[0];
+        String price = vehicleData[1];
+        String colorRgb = vehicleData[2];
+        String type = vehicleData[3];
+        String features = vehicleData[4];
+
+        String[] rgb = colorRgb.split(",");
+        Color cardColor = new Color(Integer.parseInt(rgb[0]), Integer.parseInt(rgb[1]), Integer.parseInt(rgb[2]));
+
+        JPanel card = new JPanel();
+        card.setLayout(new BorderLayout(10, 0));
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(224, 224, 224), 2),
+            new EmptyBorder(15, 15, 15, 15)
+        ));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        JRadioButton radioBtn = new JRadioButton();
+        radioBtn.setOpaque(false);
+        radioBtn.setFocusPainted(false);
+        group.add(radioBtn);
+
+        JPanel leftSection = new JPanel(new BorderLayout());
+        leftSection.setOpaque(false);
+        leftSection.add(radioBtn, BorderLayout.WEST);
+
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false);
+        infoPanel.setBorder(new EmptyBorder(0, 10, 0, 0));
+
+        JLabel nameLabel = new JLabel(name);
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        nameLabel.setForeground(cardColor);
+
+        JLabel typeLabel = new JLabel(type);
+        typeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        typeLabel.setForeground(new Color(100, 100, 100));
+
+        JLabel featuresLabel = new JLabel("<html>" + features + "</html>");
+        featuresLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        featuresLabel.setForeground(new Color(120, 120, 120));
+
+        infoPanel.add(nameLabel);
+        infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        infoPanel.add(typeLabel);
+        infoPanel.add(Box.createRigidArea(new Dimension(0, 3)));
+        infoPanel.add(featuresLabel);
+
+        leftSection.add(infoPanel, BorderLayout.CENTER);
+
+        JPanel pricePanel = new JPanel();
+        pricePanel.setLayout(new BoxLayout(pricePanel, BoxLayout.Y_AXIS));
+        pricePanel.setOpaque(false);
+
+        JLabel priceValueLabel = new JLabel("BDT " + price);
+        priceValueLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        priceValueLabel.setForeground(new Color(76, 175, 80));
+
+        JLabel perPersonLabel = new JLabel("per person");
+        perPersonLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        perPersonLabel.setForeground(new Color(150, 150, 150));
+
+        pricePanel.add(priceValueLabel);
+        pricePanel.add(perPersonLabel);
+
+        card.add(leftSection, BorderLayout.CENTER);
+        card.add(pricePanel, BorderLayout.EAST);
+
+        radioBtn.addActionListener(e -> {
+            if (selectedLabel[0] != null) {
+                selectedLabel[0].setText("Selected: " + name);
+                selectedLabel[0].setForeground(cardColor);
+            }
+            if (priceLabel[0] != null) {
+                priceLabel[0].setText(price);
+            }
+            
+            card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(cardColor, 3),
+                new EmptyBorder(14, 14, 14, 14)
+            ));
+            card.setBackground(new Color(cardColor.getRed(), cardColor.getGreen(), cardColor.getBlue(), 20));
+        });
+
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                radioBtn.setSelected(true);
+                radioBtn.doClick();
+            }
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if (!radioBtn.isSelected()) {
+                    card.setBackground(new Color(245, 245, 245));
+                }
+            }
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (!radioBtn.isSelected()) {
+                    card.setBackground(Color.WHITE);
+                }
+            }
+        });
+
+        return card;
+    }
+
+    private JPanel createBookingFormPanelWithSharedLabels(String transportType, String[] fromLocations, String[] toLocations, Color themeColor, JLabel[] sharedSelectedLabel, JLabel[] sharedPriceLabel) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(new Color(245, 245, 250));
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(themeColor, 2),
+            new EmptyBorder(20, 20, 20, 20)
+        ));
+
+        JPanel formPanel = new JPanel();
+        formPanel.setOpaque(false);
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        JLabel formTitle = new JLabel("Book Your " + transportType);
+        formTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        formTitle.setForeground(themeColor);
+        formTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel selectedVehicle = new JLabel("Select a " + transportType.toLowerCase() + " type");
+        selectedVehicle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        selectedVehicle.setForeground(new Color(100, 100, 100));
+        selectedVehicle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        sharedSelectedLabel[0] = selectedVehicle;
+
+        JLabel hiddenPrice = new JLabel("0");
+        hiddenPrice.setVisible(false);
+        sharedPriceLabel[0] = hiddenPrice;
+
+        JLabel fromLabel = createFormLabel("From");
+        JComboBox<String> fromCombo = ComfyGoGUI.createStyledComboBox(fromLocations);
+        fromCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        fromCombo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel toLabel = createFormLabel("To");
+        JComboBox<String> toCombo = ComfyGoGUI.createStyledComboBox(toLocations);
+        toCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        toCombo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel dateLabel = createFormLabel("Journey Date (YYYY-MM-DD)");
+        JTextField dateField = ComfyGoGUI.createStyledTextField();
+        dateField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        dateField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        dateField.setText(java.time.LocalDate.now().plusDays(1).toString());
+
+        JLabel passengersLabel = createFormLabel("Number of Passengers");
+        JSpinner passengersSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 10, 1));
+        passengersSpinner.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        passengersSpinner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        passengersSpinner.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel totalLabel = new JLabel("Total Fare: BDT 0.00");
+        totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        totalLabel.setForeground(new Color(76, 175, 80));
+        totalLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton calculateBtn = ComfyGoGUI.createStyledButton("Calculate Fare", new Color(255, 152, 0));
+        calculateBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        calculateBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
+        calculateBtn.addActionListener(e -> {
+            try {
+                double basePrice = Double.parseDouble(hiddenPrice.getText());
+                if (basePrice == 0) {
+                    JOptionPane.showMessageDialog(mainFrame, "Please select a " + transportType.toLowerCase() + " type first!", "No Selection", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                String from = (String) fromCombo.getSelectedItem();
+                String to = (String) toCombo.getSelectedItem();
+
+                if (from.equals(to)) {
+                    JOptionPane.showMessageDialog(mainFrame, "Departure and destination cannot be the same!", "Invalid Route", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                int passengers = (int) passengersSpinner.getValue();
+                double total = basePrice * passengers;
+
+                totalLabel.setText(String.format("Total Fare: BDT %.2f (%d passengers)", total, passengers));
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(mainFrame, "Error calculating fare!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        JSeparator sep = new JSeparator();
+        sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        sep.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel paymentLabel = createFormLabel("Payment Method");
+        String[] methods = {"Cash", "Credit Card", "Debit Card", "bKash", "Nagad", "Rocket"};
+        JComboBox<String> paymentCombo = ComfyGoGUI.createStyledComboBox(methods);
+        paymentCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        paymentCombo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton bookBtn = ComfyGoGUI.createStyledButton("Confirm Booking", themeColor);
+        bookBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        bookBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
+        bookBtn.setFont(new Font("Segoe UI", Font.BOLD, 16));
+
+        bookBtn.addActionListener(e -> {
+            try {
+                double basePrice = Double.parseDouble(hiddenPrice.getText());
+                if (basePrice == 0) {
+                    JOptionPane.showMessageDialog(mainFrame, "Please select a " + transportType.toLowerCase() + " type first!", "No Selection", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                String vehicleName = selectedVehicle.getText().replace("Selected: ", "");
+                if (vehicleName.equals("Select a " + transportType.toLowerCase() + " type")) {
+                    JOptionPane.showMessageDialog(mainFrame, "Please select a " + transportType.toLowerCase() + " type!", "No Selection", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                String from = (String) fromCombo.getSelectedItem();
+                String to = (String) toCombo.getSelectedItem();
+                String date = dateField.getText().trim();
+
+                if (from.equals(to)) {
+                    JOptionPane.showMessageDialog(mainFrame, "Departure and destination cannot be the same!", "Invalid Route", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                if (date.isEmpty()) {
+                    JOptionPane.showMessageDialog(mainFrame, "Please enter journey date!", "Missing Date", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                int passengers = (int) passengersSpinner.getValue();
+                double totalFare = basePrice * passengers;
+                String paymentMethod = (String) paymentCombo.getSelectedItem();
+
+                String seatNumbers = generateSeatNumbers(passengers);
+
+                boolean success = mainFrame.getTransportService().bookTransport(
+                    mainFrame.getCurrentUserId(),
+                    transportType,
+                    from,
+                    to,
+                    date,
+                    java.time.LocalDateTime.now().toString(),
+                    passengers,
+                    seatNumbers,
+                    totalFare,
+                    vehicleName,
+                    "ComfyGo " + transportType,
+                    false,
+                    null
+                );
+
+                if (success) {
+                    JOptionPane.showMessageDialog(mainFrame,
+                        String.format("Booking Confirmed!\n\n%s: %s\nRoute: %s to %s\nDate: %s\nPassengers: %d\nSeats: %s\nTotal Fare: BDT %.2f\nPayment: %s\n\nHave a safe journey!",
+                            transportType, vehicleName, from, to, date, passengers, seatNumbers, totalFare, paymentMethod),
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                    fromCombo.setSelectedIndex(0);
+                    toCombo.setSelectedIndex(0);
+                    dateField.setText(java.time.LocalDate.now().plusDays(1).toString());
+                    passengersSpinner.setValue(1);
+                    totalLabel.setText("Total Fare: BDT 0.00");
+                    selectedVehicle.setText("Select a " + transportType.toLowerCase() + " type");
+                    hiddenPrice.setText("0");
+
+                    contentLayout.show(contentPanel, "BOOKINGS");
+                } else {
+                    JOptionPane.showMessageDialog(mainFrame, "Booking failed! Please try again.", "Booking Failed", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(mainFrame, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        formPanel.add(formTitle);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+        formPanel.add(selectedVehicle);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        formPanel.add(fromLabel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+        formPanel.add(fromCombo);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        formPanel.add(toLabel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+        formPanel.add(toCombo);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        formPanel.add(dateLabel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+        formPanel.add(dateField);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        formPanel.add(passengersLabel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+        formPanel.add(passengersSpinner);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 18)));
+        formPanel.add(calculateBtn);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 12)));
+        formPanel.add(totalLabel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 25)));
+        formPanel.add(sep);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        formPanel.add(paymentLabel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+        formPanel.add(paymentCombo);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 25)));
+        formPanel.add(bookBtn);
+        formPanel.add(hiddenPrice);
+
+        JScrollPane scrollPane = new JScrollPane(formPanel);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        card.add(scrollPane, BorderLayout.CENTER);
+        return card;
+    }
+
+    private String generateSeatNumbers(int count) {
+        StringBuilder seats = new StringBuilder();
+        int startSeat = (int) (Math.random() * 20) + 1;
+        for (int i = 0; i < count; i++) {
+            if (i > 0) seats.append(", ");
+            seats.append("A").append(startSeat + i);
+        }
+        return seats.toString();
+    }
+
     private JPanel createBookingsPanel() {
         JPanel shell = screenShell("My Bookings");
         JPanel body = new JPanel(new BorderLayout());
@@ -1364,7 +1805,6 @@ public class TouristDashboard extends JPanel {
         }
     }
 
-    // ========== RATINGS PANEL ==========
     private JPanel createRatingsPanel() {
         JPanel shell = screenShell("Rate & Review");
         JPanel body = new JPanel(new BorderLayout());
