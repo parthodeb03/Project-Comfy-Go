@@ -1,21 +1,17 @@
 {
   "java.project.sourcePaths": ["src"],
   "java.project.outputPath": "bin",
-
-  "java.project.referencedLibraries": {
-    "include": [
-      "lib/**/*.jar",
-      "E:/mysql-connector-j-9.3.0.jar",
-      "C:/Program Files/Java/javafx-sdk-25.0.1/lib/*.jar"
-    ],
-    "exclude": [
-      "c:\\Program Files\\Java\\javafx-sdk-25.0.1\\lib\\javafx.base.jar",
-      "lib/javafx-swt.jar"
-    ]
-  },
-
+  "java.project.referencedLibraries": [
+    "c:\\Users\\FLS\\OneDrive\\Desktop\\ComfyGo\\ProjectComfyGo\\lib\\json-20240303.jar",
+    "c:\\Users\\FLS\\OneDrive\\Desktop\\ComfyGo\\ProjectComfyGo\\lib\\mysql-connector-j-9.3.0.jar",
+    "c:\\Users\\FLS\\OneDrive\\Desktop\\ComfyGo\\ProjectComfyGo\\lib\\javafx.base.jar",
+    "c:\\Users\\FLS\\OneDrive\\Desktop\\ComfyGo\\ProjectComfyGo\\lib\\javafx.controls.jar",
+    "c:\\Users\\FLS\\OneDrive\\Desktop\\ComfyGo\\ProjectComfyGo\\lib\\javafx.fxml.jar",
+    "c:\\Users\\FLS\\OneDrive\\Desktop\\ComfyGo\\ProjectComfyGo\\lib\\javafx.graphics.jar",
+    "c:\\Users\\FLS\\OneDrive\\Desktop\\ComfyGo\\ProjectComfyGo\\lib\\javafx.media.jar",
+    "c:\\Users\\FLS\\OneDrive\\Desktop\\ComfyGo\\ProjectComfyGo\\lib\\javafx.swing.jar",
+    "c:\\Users\\FLS\\OneDrive\\Desktop\\ComfyGo\\ProjectComfyGo\\lib\\javafx.web.jar"
+  ],
   "java.home": "C:/Program Files/Java/jdk-25",
-
-  "java.debug.settings.onBuildFailureProceed": true,
-  "javaAutoConfig.enabled": false
+  "java.debug.settings.onBuildFailureProceed": true
 }
